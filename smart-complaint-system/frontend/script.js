@@ -148,12 +148,13 @@ function animateCounters() {
     counters.forEach(counter => observer.observe(counter));
 }
 
-// API Functions
+// Enhanced API Functions
 async function loadInitialData() {
     try {
-        const [deptResponse, courseResponse] = await Promise.all([
+        const [deptResponse, courseResponse, categoriesResponse] = await Promise.all([
             fetch(`${API_BASE}/departments`),
-            fetch(`${API_BASE}/courses`)
+            fetch(`${API_BASE}/courses`),
+            fetch(`${API_BASE}/complaint-categories`)
         ]);
         
         if (deptResponse.ok) {
@@ -163,9 +164,122 @@ async function loadInitialData() {
         if (courseResponse.ok) {
             courses = await courseResponse.json();
         }
+        
+        if (categoriesResponse.ok) {
+            categories = await categoriesResponse.json();
+        }
     } catch (error) {
         console.error('Failed to load initial data:', error);
         showToast('Failed to load data. Please refresh the page.', 'error');
+    }
+}
+
+// Enhanced Search Function
+async function searchComplaints(filters = {}) {
+    try {
+        const params = new URLSearchParams();
+        
+        if (filters.query) params.append('q', filters.query);
+        if (filters.status) params.append('status', filters.status);
+        if (filters.priority) params.append('priority', filters.priority);
+        if (filters.department_id) params.append('department_id', filters.department_id);
+        if (filters.date_from) params.append('date_from', filters.date_from);
+        if (filters.date_to) params.append('date_to', filters.date_to);
+        
+        const response = await fetch(`${API_BASE}/complaints/search?${params}`);
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        }
+        throw new Error('Search failed');
+    } catch (error) {
+        console.error('Search error:', error);
+        showToast('Search failed. Please try again.', 'error');
+        return { complaints: [], total: 0 };
+    }
+}
+
+// Export Complaints Function
+async function exportComplaints() {
+    try {
+        const response = await fetch(`${API_BASE}/complaints/export`);
+        if (response.ok) {
+            const data = await response.json();
+            downloadCSV(data.data, data.filename);
+            showToast('Complaints exported successfully!', 'success');
+        } else {
+            throw new Error('Export failed');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        showToast('Export failed. Please try again.', 'error');
+    }
+}
+
+// Download CSV Helper
+function downloadCSV(data, filename) {
+    if (!data || data.length === 0) {
+        showToast('No data to export', 'warning');
+        return;
+    }
+    
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Enhanced Stats Loading
+async function loadEnhancedStats() {
+    try {
+        const response = await fetch(`${API_BASE}/stats`);
+        if (response.ok) {
+            const stats = await response.json();
+            updateStatsDisplay(stats);
+            return stats;
+        }
+    } catch (error) {
+        console.error('Failed to load stats:', error);
+        return null;
+    }
+}
+
+function updateStatsDisplay(stats) {
+    // Update basic counts
+    document.getElementById('total-complaints').textContent = stats.total || 0;
+    document.getElementById('pending-complaints').textContent = stats.pending || 0;
+    document.getElementById('progress-complaints').textContent = stats.in_progress || 0;
+    document.getElementById('resolved-complaints').textContent = stats.resolved || 0;
+    
+    // Update progress bars
+    const total = stats.total || 1;
+    document.getElementById('pending-progress').style.width = `${(stats.pending / total) * 100}%`;
+    document.getElementById('inprogress-progress').style.width = `${(stats.in_progress / total) * 100}%`;
+    document.getElementById('resolved-progress').style.width = `${(stats.resolved / total) * 100}%`;
+    
+    // Update additional stats if elements exist
+    if (document.getElementById('today-count')) {
+        document.getElementById('today-count').textContent = stats.today || 0;
+    }
+    if (document.getElementById('week-count')) {
+        document.getElementById('week-count').textContent = stats.this_week || 0;
+    }
+    if (document.getElementById('resolution-rate')) {
+        document.getElementById('resolution-rate').textContent = `${stats.resolution_rate || 0}%`;
+    }
+    if (document.getElementById('avg-resolution')) {
+        document.getElementById('avg-resolution').textContent = `${stats.avg_resolution_hours || 0}h`;
     }
 }
 
@@ -551,11 +665,95 @@ function fillDemoCredentials() {
 }
 
 // Form Handlers
+// Enhanced Form Validation
+function validateForm(formData, formType = 'registration') {
+    const errors = [];
+    
+    if (formType === 'registration') {
+        // Required fields validation
+        const requiredFields = {
+            'name': 'Full Name',
+            'email': 'Email Address',
+            'phone': 'Phone Number',
+            'course_id': 'Course',
+            'year': 'Year',
+            'semester': 'Semester',
+            'roll_number': 'Roll Number',
+            'admission_year': 'Admission Year'
+        };
+        
+        for (const [field, label] of Object.entries(requiredFields)) {
+            if (!formData[field] || formData[field].toString().trim() === '') {
+                errors.push(`${label} is required`);
+            }
+        }
+        
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (formData.email && !emailRegex.test(formData.email)) {
+            errors.push('Please enter a valid email address');
+        }
+        
+        // Phone validation
+        const phoneRegex = /^[0-9]{10,15}$/;
+        const cleanPhone = formData.phone ? formData.phone.replace(/\D/g, '') : '';
+        if (formData.phone && !phoneRegex.test(cleanPhone)) {
+            errors.push('Please enter a valid phone number (10-15 digits)');
+        }
+        
+        // Year validation
+        const currentYear = new Date().getFullYear();
+        if (formData.admission_year && (formData.admission_year < 2000 || formData.admission_year > currentYear)) {
+            errors.push('Please enter a valid admission year');
+        }
+        
+        // Semester validation
+        if (formData.semester && (formData.semester < 1 || formData.semester > 8)) {
+            errors.push('Semester must be between 1 and 8');
+        }
+    }
+    
+    return errors;
+}
+
+function showFormErrors(errors) {
+    if (errors.length === 0) return;
+    
+    const errorHtml = `
+        <div class="form-errors" style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+            <h4 style="color: #ef4444; margin: 0 0 0.5rem 0; font-size: 0.9rem;">Please fix the following errors:</h4>
+            <ul style="margin: 0; padding-left: 1.5rem; color: #ef4444; font-size: 0.85rem;">
+                ${errors.map(error => `<li>${error}</li>`).join('')}
+            </ul>
+        </div>
+    `;
+    
+    // Remove existing errors
+    const existingErrors = document.querySelector('.form-errors');
+    if (existingErrors) {
+        existingErrors.remove();
+    }
+    
+    // Add new errors at the top of the form
+    const form = document.querySelector('form');
+    if (form) {
+        form.insertAdjacentHTML('afterbegin', errorHtml);
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
 async function handleStudentRegistration(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
+    
+    // Validate form data
+    const errors = validateForm(data, 'registration');
+    if (errors.length > 0) {
+        showFormErrors(errors);
+        return;
+    }
     
     const courseSelect = document.getElementById('course-select');
     data.department_id = courseSelect.getAttribute('data-department-id');
@@ -566,6 +764,12 @@ async function handleStudentRegistration(e) {
     submitBtn.disabled = true;
     
     try {
+        // Remove any existing errors
+        const existingErrors = document.querySelector('.form-errors');
+        if (existingErrors) {
+            existingErrors.remove();
+        }
+        
         await registerStudent(data);
     } finally {
         submitBtn.innerHTML = originalText;
@@ -598,6 +802,68 @@ let currentView = 'dashboard'; // 'dashboard', 'new-complaint', 'my-complaints'
 let selectedDepartment = null;
 let selectedCategory = null;
 let complaintComments = {};
+let notificationInterval = null;
+let lastNotificationCheck = new Date();
+
+// Notification System
+async function loadNotifications() {
+    if (!currentUser) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/notifications/${currentUser.id}`);
+        if (response.ok) {
+            const data = await response.json();
+            updateNotificationBadge(data.notifications);
+            return data.notifications;
+        }
+    } catch (error) {
+        console.error('Failed to load notifications:', error);
+    }
+    return [];
+}
+
+function updateNotificationBadge(notifications) {
+    const unreadCount = notifications.filter(n => !n.read).length;
+    const badge = document.getElementById('notification-badge');
+    
+    if (badge) {
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+function startNotificationPolling() {
+    if (notificationInterval) {
+        clearInterval(notificationInterval);
+    }
+    
+    // Check for notifications every 30 seconds
+    notificationInterval = setInterval(async () => {
+        const notifications = await loadNotifications();
+        
+        // Show toast for new notifications
+        const newNotifications = notifications.filter(n => 
+            new Date(n.timestamp) > lastNotificationCheck && !n.read
+        );
+        
+        newNotifications.forEach(notification => {
+            showToast(notification.message, 'info');
+        });
+        
+        lastNotificationCheck = new Date();
+    }, 30000);
+}
+
+function stopNotificationPolling() {
+    if (notificationInterval) {
+        clearInterval(notificationInterval);
+        notificationInterval = null;
+    }
+}
 
 function showStudentDashboard() {
     document.body.innerHTML = `
@@ -660,8 +926,14 @@ function showStudentDashboard() {
     loadDashboardView();
     loadUserComplaints();
     
+    // Load enhanced stats
+    loadEnhancedStats();
+    
     // Start auto-refresh for real-time updates
     startAutoRefresh();
+    
+    // Start notification polling
+    startNotificationPolling();
 }
 
 function setDashboardView(view) {
@@ -2788,13 +3060,37 @@ function checkAuthStatus() {
     }
 }
 
-function logout() {
-    // Stop auto-refresh when logging out
-    stopAutoRefresh();
-    
-    currentUser = null;
-    localStorage.removeItem('user');
-    location.reload();
+async function logout() {
+    try {
+        // Stop all polling
+        stopAutoRefresh();
+        stopNotificationPolling();
+        
+        // Call logout API
+        await fetch(`${API_BASE}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        // Clear local data
+        currentUser = null;
+        localStorage.removeItem('user');
+        localStorage.clear(); // Clear any cached data
+        
+        showToast('Logged out successfully', 'success');
+        
+        // Redirect after a short delay
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Force logout even if API call fails
+        currentUser = null;
+        localStorage.clear();
+        location.reload();
+    }
 }
 
 function showToast(message, type = 'info') {
