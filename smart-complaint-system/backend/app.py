@@ -891,5 +891,43 @@ def health_check():
             'timestamp': datetime.utcnow().isoformat()
         }), 500
 
+# Error Handlers
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Resource not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return jsonify({'error': 'Internal server error'}), 500
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({'error': 'Bad request'}), 400
+
+@app.errorhandler(403)
+def forbidden(error):
+    return jsonify({'error': 'Access forbidden'}), 403
+
+# Rate limiting (if flask-limiter is installed)
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    
+    limiter = Limiter(
+        app,
+        key_func=get_remote_address,
+        default_limits=["200 per day", "50 per hour"]
+    )
+    
+    # Apply rate limiting to sensitive endpoints
+    @app.route('/api/register', methods=['POST'])
+    @limiter.limit("5 per minute")
+    def register_limited():
+        return register()
+        
+except ImportError:
+    print("⚠️ Flask-Limiter not installed. Rate limiting disabled.")
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
