@@ -1,0 +1,13 @@
+flask
+flask-cors
+flask-sqlalchemy
+flask-login
+flask-bcrypt
+psycopg2-binary
+python-dotenv
+scikit-learn
+joblib
+pandas
+numpy
+hypothesis
+pytest

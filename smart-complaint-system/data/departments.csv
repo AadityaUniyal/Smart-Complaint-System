@@ -1,0 +1,19 @@
+id,name,code,description,head_name,email,phone,location
+1,Computer Science & Engineering,CSE,Software development and computer systems,Dr. Rajesh Kumar,cse.head@college.edu,+91-9876543210,Block A - 3rd Floor
+2,Electronics & Communication,ECE,Electronics and communication systems,Dr. Priya Sharma,ece.head@college.edu,+91-9876543211,Block B - 2nd Floor
+3,Mechanical Engineering,MECH,Mechanical systems and manufacturing,Dr. Amit Singh,mech.head@college.edu,+91-9876543212,Block C - 1st Floor
+4,Civil Engineering,CIVIL,Construction and infrastructure,Dr. Sunita Verma,civil.head@college.edu,+91-9876543213,Block D - Ground Floor
+5,Electrical Engineering,EEE,Electrical systems and power,Dr. Vikram Gupta,eee.head@college.edu,+91-9876543214,Block E - 2nd Floor
+6,Information Technology,IT,Information systems and networks,Dr. Neha Agarwal,it.head@college.edu,+91-9876543215,Block A - 2nd Floor
+7,Hostel Management,HOSTEL,Student accommodation services,Mr. Ravi Patel,hostel.warden@college.edu,+91-9876543216,Hostel Block
+8,Mess & Catering,MESS,Food and dining services,Mrs. Kavita Joshi,mess.manager@college.edu,+91-9876543217,Mess Building
+9,Library Services,LIBRARY,Academic resources and study facilities,Dr. Mohan Lal,librarian@college.edu,+91-9876543218,Central Library
+10,Examination Cell,EXAM,Examinations and academic evaluation,Dr. Sushma Reddy,exam.controller@college.edu,+91-9876543219,Admin Block - 1st Floor
+11,Accounts & Finance,ACCOUNTS,Fee collection and financial services,Mr. Deepak Jain,accounts@college.edu,+91-9876543220,Admin Block - Ground Floor
+12,Placement Cell,PLACEMENT,Career guidance and job placements,Ms. Anjali Mehta,placement@college.edu,+91-9876543221,Placement Block
+13,Sports & Recreation,SPORTS,Sports facilities and activities,Mr. Suresh Kumar,sports@college.edu,+91-9876543222,Sports Complex
+14,Medical Services,MEDICAL,Health and medical facilities,Dr. Rashid Ali,medical@college.edu,+91-9876543223,Medical Center
+15,Transport Services,TRANSPORT,College bus and transportation,Mr. Ramesh Yadav,transport@college.edu,+91-9876543224,Transport Office
+16,IT Services,IT_SERVICES,Computer labs and technical support,Mr. Arun Sharma,itservices@college.edu,+91-9876543225,IT Center
+17,Maintenance & Infrastructure,MAINTENANCE,Building and facility maintenance,Mr. Prakash Singh,maintenance@college.edu,+91-9876543226,Maintenance Office
+18,Student Affairs,STUDENT_AFFAIRS,Student activities and welfare,Dr. Meera Joshi,studentaffairs@college.edu,+91-9876543227,Student Center

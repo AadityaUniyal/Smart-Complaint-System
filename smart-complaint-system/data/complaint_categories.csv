@@ -1,0 +1,101 @@
+id,name,description,department_id,priority_level,typical_resolution_days
+1,Course Content Issues,Syllabus coverage and curriculum concerns,1,Medium,7
+2,Teaching Quality,Faculty teaching methods and effectiveness,1,High,5
+3,Assignment & Projects,Assignment deadlines and project guidance,1,Medium,3
+4,Attendance Marking,Incorrect attendance or marking issues,1,Medium,2
+5,Class Scheduling,Timetable conflicts and class timing issues,1,Medium,3
+6,Lab Equipment Malfunction,Computer/equipment not working properly,16,High,2
+7,Lab Software Issues,Software installation and licensing problems,16,High,1
+8,Lab Access Problems,Lab booking and access card issues,16,Medium,2
+9,Internet Connectivity,WiFi and network connection problems,16,High,1
+10,Computer Hardware Issues,PC/laptop hardware problems in labs,16,High,2
+11,Room Allocation,Hostel room assignment and transfer requests,7,High,5
+12,Room Maintenance,Plumbing electrical and furniture issues,7,High,3
+13,Hostel Security,Safety and security concerns in hostel,7,Critical,1
+14,Hostel Cleanliness,Cleaning and hygiene issues,7,Medium,2
+15,Hostel Rules & Regulations,Policy and rule-related concerns,7,Medium,5
+16,Food Quality,Taste hygiene and nutritional concerns,8,Medium,1
+17,Food Variety,Limited menu and dietary options,8,Low,3
+18,Mess Timing,Meal timing and service hours,8,Medium,2
+19,Mess Cleanliness,Kitchen and dining area hygiene,8,High,1
+20,Food Allergies,Special dietary requirements not met,8,High,1
+21,Book Availability,Required books not available,9,Medium,5
+22,Library Timing,Extended hours and holiday access,9,Low,7
+23,Reading Room Issues,Seating and study environment problems,9,Medium,3
+24,Library Staff Behavior,Staff attitude and service issues,9,Medium,5
+25,Digital Resources,Online database and e-book access,9,Medium,3
+26,Exam Scheduling,Date clashes and timing issues,10,High,7
+27,Exam Hall Conditions,Seating lighting and environment,10,Medium,3
+28,Result Declaration,Delayed or incorrect results,10,High,10
+29,Revaluation Process,Re-evaluation and answer sheet issues,10,Medium,14
+30,Hall Ticket Issues,Admit card and registration problems,10,High,5
+31,Fee Structure Clarity,Unclear fee breakdown and charges,11,Medium,5
+32,Payment Gateway Issues,Online payment failures and receipts,11,High,2
+33,Refund Delays,Fee refund processing delays,11,High,10
+34,Scholarship Disbursement,Scholarship amount not received,11,High,14
+35,Financial Aid Information,Lack of information about aid programs,11,Low,7
+36,Company Visits,Insufficient company participation,12,Medium,30
+37,Placement Training,Inadequate skill development programs,12,Medium,21
+38,Interview Process,Unfair selection and interview issues,12,Medium,14
+39,Job Notifications,Late or missed job opportunity alerts,12,Medium,7
+40,Career Counseling,Lack of proper career guidance,12,Low,14
+41,Sports Equipment,Damaged or insufficient sports gear,13,Medium,7
+42,Ground Maintenance,Poor condition of sports facilities,13,Medium,10
+43,Sports Event Organization,Issues with tournaments and events,13,Low,14
+44,Gym Facilities,Equipment and maintenance in gymnasium,13,Medium,5
+45,Sports Timing,Facility booking and timing conflicts,13,Low,3
+46,Medical Emergency Response,Delayed emergency medical care,14,Critical,1
+47,Medicine Availability,Required medicines not in stock,14,High,2
+48,Doctor Availability,Medical officer not available,14,High,1
+49,Health Checkup Services,Regular health screening issues,14,Medium,7
+50,Medical Certificate,Delays in medical certificate issuance,14,Medium,3
+51,Bus Route Issues,Route changes and stop modifications,15,Medium,7
+52,Bus Timing,Irregular or delayed bus services,15,High,3
+53,Bus Condition,Vehicle maintenance and comfort issues,15,Medium,5
+54,Driver Behavior,Unprofessional conduct by drivers,15,High,2
+55,Bus Overcrowding,Insufficient seating and overcrowding,15,Medium,5
+56,Classroom Facilities,Projector AC and seating issues,17,Medium,5
+57,Washroom Maintenance,Cleanliness and facility maintenance,17,High,2
+58,Electrical Issues,Power outages and electrical problems,17,High,1
+59,Water Supply,Drinking water and supply issues,17,High,2
+60,Building Safety,Structural safety and emergency exits,17,Critical,3
+61,Event Organization,Poor planning of college events,18,Low,10
+62,Club Activities,Issues with student clubs and societies,18,Low,7
+63,Cultural Programs,Problems with cultural event management,18,Low,14
+64,Student Representation,Lack of student voice in decisions,18,Medium,14
+65,Grievance Redressal,Slow complaint resolution process,18,Medium,7
+66,Ragging Incidents,Any form of ragging or bullying,18,Critical,1
+67,Sexual Harassment,Inappropriate behavior or harassment,18,Critical,1
+68,Discrimination,Caste religion or gender discrimination,18,Critical,1
+69,Mental Health Support,Lack of counseling and support services,18,High,3
+70,Safety Concerns,General safety and security issues,18,High,2
+71,Document Verification,Delays in certificate verification,10,Medium,7
+72,Transcript Issues,Problems with academic transcripts,10,Medium,5
+73,ID Card Problems,Student ID card related issues,18,Medium,3
+74,Migration Certificate,Issues with migration and transfer certificates,10,Medium,10
+75,Bonafide Certificate,Delays in bonafide certificate issuance,10,Low,3
+76,Faculty Availability,Teachers not available during office hours,1,Medium,3
+77,Practical Exam Issues,Lab exam scheduling and evaluation,1,High,5
+78,Internal Assessment,Unfair internal marking and evaluation,1,High,7
+79,Semester Registration,Course registration and enrollment issues,10,High,5
+80,Backlog Clearance,Issues with backlog exam arrangements,10,Medium,14
+81,Parking Issues,Insufficient parking space for vehicles,17,Low,10
+82,Canteen Services,Food court and canteen related issues,8,Medium,3
+83,Stationery Shop,Campus store and supplies issues,18,Low,5
+84,Banking Services,ATM and banking facility problems,18,Medium,5
+85,Postal Services,Campus post office related issues,18,Low,7
+86,Guest Lecture Issues,Problems with external speaker sessions,1,Low,7
+87,Industrial Visit,Issues with educational trips and visits,1,Medium,14
+88,Internship Support,Lack of internship guidance and opportunities,12,Medium,21
+89,Research Facilities,Inadequate research infrastructure,1,Medium,30
+90,Project Guidance,Insufficient project supervision,1,Medium,14
+91,Seminar Hall Booking,Issues with auditorium and hall reservations,18,Medium,5
+92,Photography Services,Campus photography and videography issues,18,Low,7
+93,Alumni Network,Lack of alumni interaction and support,12,Low,30
+94,Industry Collaboration,Insufficient industry-academia partnerships,12,Medium,60
+95,Innovation Support,Lack of support for student innovations,1,Medium,21
+96,Entrepreneurship Programs,Issues with startup and business incubation,12,Medium,30
+97,Language Lab Issues,Problems with language learning facilities,1,Medium,5
+98,Conference Room Booking,Meeting room reservation problems,18,Low,3
+99,Printing Services,Campus printing and photocopying issues,18,Low,2
+100,Lost and Found,Issues with lost item recovery system,18,Low,5

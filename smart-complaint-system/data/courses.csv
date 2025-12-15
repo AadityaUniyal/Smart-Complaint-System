@@ -1,0 +1,19 @@
+id,name,code,duration_years,department_id,degree_type
+1,Bachelor of Technology in Computer Science,B.Tech CSE,4,1,Undergraduate
+2,Bachelor of Technology in Electronics & Communication,B.Tech ECE,4,2,Undergraduate
+3,Bachelor of Technology in Mechanical Engineering,B.Tech MECH,4,3,Undergraduate
+4,Bachelor of Technology in Civil Engineering,B.Tech CIVIL,4,4,Undergraduate
+5,Bachelor of Technology in Electrical Engineering,B.Tech EEE,4,5,Undergraduate
+6,Bachelor of Technology in Information Technology,B.Tech IT,4,6,Undergraduate
+7,Master of Technology in Computer Science,M.Tech CSE,2,1,Postgraduate
+8,Master of Technology in Electronics & Communication,M.Tech ECE,2,2,Postgraduate
+9,Master of Technology in Mechanical Engineering,M.Tech MECH,2,3,Postgraduate
+10,Master of Technology in Civil Engineering,M.Tech CIVIL,2,4,Postgraduate
+11,Master of Business Administration,MBA,2,12,Postgraduate
+12,Bachelor of Computer Applications,BCA,3,6,Undergraduate
+13,Master of Computer Applications,MCA,3,6,Postgraduate
+14,Bachelor of Science in Information Technology,B.Sc IT,3,6,Undergraduate
+15,Diploma in Computer Science,Diploma CSE,3,1,Diploma
+16,Diploma in Mechanical Engineering,Diploma MECH,3,3,Diploma
+17,Diploma in Civil Engineering,Diploma CIVIL,3,4,Diploma
+18,Diploma in Electrical Engineering,Diploma EEE,3,5,Diploma
