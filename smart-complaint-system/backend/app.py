@@ -4,7 +4,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from flask_bcrypt import Bcrypt
 from models import db, User, Complaint, Comment, Department, Course, ComplaintCategory
 from config import Config
-import joblib
+
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -28,7 +28,7 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Database retry decorator
+# Database connection retry
 def retry_db_operation(max_retries=3, delay=1):
     def decorator(func):
         @wraps(func)
@@ -53,13 +53,12 @@ def retry_db_operation(max_retries=3, delay=1):
         return wrapper
     return decorator
 
-# CSV Helper Functions
+# CSV file operations
 def save_student_to_csv(user):
-    """Save new student registration to students.csv"""
     try:
         csv_path = os.path.join(os.path.dirname(__file__), '../data/students.csv')
         
-        # Prepare student data
+        # Student data for CSV
         student_data = {
             'student_id': user.student_id,
             'name': user.name,
@@ -102,11 +101,10 @@ def save_student_to_csv(user):
         print(f"❌ Error saving student to CSV: {e}")
 
 def save_complaint_to_csv(complaint, student_name):
-    """Save new complaint to student_complaints.csv"""
     try:
         csv_path = os.path.join(os.path.dirname(__file__), '../data/student_complaints.csv')
         
-        # Prepare complaint data
+        # Complaint data for CSV
         complaint_data = {
             'complaint_id': complaint.complaint_id,
             'student_id': complaint.student.student_id if complaint.student else '',
@@ -146,23 +144,10 @@ def save_complaint_to_csv(complaint, student_name):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Load ML model
-try:
-    # Adjust path to point to ml folder relative to backend
-    model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../ml/complaint_classifier.pkl'))
-    if os.path.exists(model_path):
-        model = joblib.load(model_path)
-        print(f"ML Model loaded successfully from {model_path}")
-    else:
-        print(f"Model file not found at {model_path}")
-        model = None
-except Exception as e:
-    print(f"Error loading model: {e}")
-    model = None
+# Model functionality removed for clean deployment
 
 @retry_db_operation(max_retries=5, delay=2)
 def init_db():
-    """Initialize database and create all tables with retry logic"""
     with app.app_context():
         try:
             # Test connection first
@@ -181,13 +166,13 @@ def init_db():
                 pass
             raise e
 
-# Initialize database on startup
+# Setup database
 init_db()
 
-# Create default admin user and load data
+# Admin setup
 def create_default_admin():
     with app.app_context():
-        # Check if admin exists
+        # Create admin if not exists
         admin = User.query.filter_by(email='admin@college.edu').first()
         if not admin:
             admin = User(
@@ -203,7 +188,6 @@ def create_default_admin():
             print("✅ Default admin created")
 
 def load_initial_data():
-    """Load initial data from CSV files"""
     try:
         from data_loader import load_all_data
         load_all_data()
@@ -214,16 +198,16 @@ def load_initial_data():
 create_default_admin()
 load_initial_data()
 
-# Authentication Routes
+# Login/Register endpoints
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
     
-    # Check if user exists
+    # Check existing user
     if User.query.filter_by(email=data.get('email')).first():
         return jsonify({'error': 'Email already registered'}), 400
     
-    # Parse date of birth
+    # Handle date of birth
     dob = None
     if data.get('date_of_birth'):
         try:
@@ -231,13 +215,13 @@ def register():
         except:
             pass
     
-    # Generate unique student ID
+    # Create student ID
     course = Course.query.get(data.get('course_id'))
     if course:
         year_suffix = str(data.get('admission_year', datetime.now().year))[-2:]
         course_code = course.code.replace(' ', '').replace('.', '').upper()
         
-        # Count existing students in same course and year
+        # Count students for ID generation
         count = User.query.filter_by(
             course_id=data.get('course_id'),
             admission_year=data.get('admission_year'),
@@ -248,7 +232,7 @@ def register():
     else:
         student_id = f"STU{datetime.now().year}{User.query.filter_by(role='student').count()+1:04d}"
     
-    # Create new student
+    # Save student data
     user = User(
         student_id=student_id,
         name=data.get('name'),
@@ -276,7 +260,7 @@ def register():
     db.session.add(user)
     db.session.commit()
     
-    # Also save to CSV file
+    # Save to CSV
     save_student_to_csv(user)
     
     return jsonify({
@@ -290,7 +274,7 @@ def login():
     login_type = data.get('login_type', 'student')  # 'student' or 'admin'
     
     if login_type == 'student':
-        # Student login with student ID
+        # Student login
         student_id = data.get('student_id')
         if not student_id:
             return jsonify({'error': 'Student ID is required'}), 400
@@ -299,7 +283,7 @@ def login():
         if not user:
             return jsonify({'error': 'Student ID not found. Please contact administration.'}), 404
         
-        # Update last login
+        # Update login time
         user.last_login = datetime.utcnow()
         db.session.commit()
         
@@ -310,7 +294,7 @@ def login():
         }), 200
     
     else:
-        # Admin login with email and password
+        # Admin login
         email = data.get('email')
         password = data.get('password')
         
@@ -342,7 +326,7 @@ def logout():
 def get_current_user():
     return jsonify(current_user.to_dict())
 
-# Complaint Routes
+# Complaint endpoints
 @app.route('/api/complaints', methods=['POST'])
 def create_complaint():
     data = request.json
@@ -362,20 +346,20 @@ def create_complaint():
     if not user_id:
         return jsonify({'error': 'User ID required'}), 400
     
-    # Get user info
+    # Find user
     user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    # Get category info for priority
+    # Set priority from category
     category = ComplaintCategory.query.get(category_id)
     priority = category.priority_level if category else 'Medium'
     
-    # Calculate expected resolution date
+    # Set expected resolution date
     resolution_days = category.typical_resolution_days if category else 7
     expected_date = datetime.utcnow() + timedelta(days=resolution_days)
 
-    # Create complaint
+    # Save complaint
     complaint = Complaint(
         title=title,
         description=description,
@@ -387,13 +371,13 @@ def create_complaint():
         expected_resolution_date=expected_date
     )
     
-    # Generate complaint ID
+    # Set complaint ID
     complaint.complaint_id = complaint.generate_complaint_id()
     
     db.session.add(complaint)
     db.session.commit()
     
-    # Also save to CSV file
+    # Save to CSV
     save_complaint_to_csv(complaint, user.name)
     
     return jsonify(complaint.to_dict()), 201
@@ -429,7 +413,7 @@ def update_priority(id):
     db.session.commit()
     return jsonify(complaint.to_dict())
 
-# Comment Routes
+# Comment endpoints
 @app.route('/api/complaints/<int:complaint_id>/comments', methods=['POST'])
 def add_comment(complaint_id):
     data = request.json
@@ -460,7 +444,7 @@ def get_comments(complaint_id):
     comments = Comment.query.filter_by(complaint_id=complaint_id).order_by(Comment.created_at.asc()).all()
     return jsonify([c.to_dict() for c in comments])
 
-# Department Routes
+# Department endpoints
 @app.route('/api/departments', methods=['GET'])
 @retry_db_operation(max_retries=3, delay=1)
 def get_departments():
@@ -476,7 +460,7 @@ def get_department_categories(dept_id):
     categories = ComplaintCategory.query.filter_by(department_id=dept_id).all()
     return jsonify([cat.to_dict() for cat in categories])
 
-# Course Routes
+# Course endpoints
 @app.route('/api/courses', methods=['GET'])
 @retry_db_operation(max_retries=3, delay=1)
 def get_courses():
@@ -492,7 +476,7 @@ def get_courses_by_department(dept_id):
     courses = Course.query.filter_by(department_id=dept_id).all()
     return jsonify([course.to_dict() for course in courses])
 
-# Complaint Category Routes
+# Category endpoints
 @app.route('/api/complaint-categories', methods=['GET'])
 @retry_db_operation(max_retries=3, delay=1)
 def get_complaint_categories():
@@ -503,7 +487,7 @@ def get_complaint_categories():
         print(f"Error fetching complaint categories: {e}")
         return jsonify({'error': 'Failed to fetch complaint categories', 'details': str(e)}), 500
 
-# Student Routes
+# Student endpoints
 @app.route('/api/student/<student_id>', methods=['GET'])
 def get_student_info(student_id):
     student = User.find_by_student_id(student_id)
@@ -511,11 +495,10 @@ def get_student_info(student_id):
         return jsonify({'error': 'Student not found'}), 404
     return jsonify(student.to_dict())
 
-# Student Complaints CSV Routes
+# CSV data endpoints
 @app.route('/api/student-complaints/<student_id>', methods=['GET'])
 @retry_db_operation(max_retries=3, delay=1)
 def get_student_complaints_from_csv(student_id):
-    """Get student complaints from CSV file"""
     try:
         csv_path = os.path.join(os.path.dirname(__file__), '../data/student_complaints.csv')
         
@@ -540,7 +523,6 @@ def get_student_complaints_from_csv(student_id):
 @app.route('/api/all-student-complaints', methods=['GET'])
 @retry_db_operation(max_retries=3, delay=1)
 def get_all_student_complaints_from_csv():
-    """Get all student complaints from CSV file for admin dashboard"""
     try:
         csv_path = os.path.join(os.path.dirname(__file__), '../data/student_complaints.csv')
         
@@ -559,7 +541,7 @@ def get_all_student_complaints_from_csv():
         print(f"Error reading all student complaints CSV: {e}")
         return jsonify({'error': 'Failed to fetch all student complaints', 'details': str(e)}), 500
 
-# Statistics Routes
+# Stats endpoints
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     total_complaints = Complaint.query.count()
@@ -567,13 +549,13 @@ def get_stats():
     resolved = Complaint.query.filter_by(status='Resolved').count()
     in_progress = Complaint.query.filter_by(status='In Progress').count()
     
-    # Department-wise breakdown
+    # Department stats
     dept_stats = db.session.query(
         Department.name, 
         db.func.count(Complaint.id)
     ).join(Complaint).group_by(Department.name).all()
     
-    # Category breakdown
+    # Category stats
     category_stats = db.session.query(
         ComplaintCategory.name, 
         db.func.count(Complaint.id)
@@ -588,11 +570,11 @@ def get_stats():
         'categories': dict(category_stats)
     })
 
-# Health check endpoint
+# Health check
 @app.route('/api/health', methods=['GET'])
 def health_check():
     try:
-        # Test database connection
+        # Check database
         db.session.execute(db.text('SELECT 1'))
         return jsonify({
             'status': 'healthy',

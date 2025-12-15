@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check Docker availability and running state with friendly errors.
+"""Docker availability checker.
 
 Exit codes:
   0 - OK
@@ -26,7 +26,7 @@ def run(cmd):
 
 
 def main():
-    # Quick path check to avoid traceback when CLI is missing
+    # Check if docker command exists
     if not docker_cli_available():
         print("Docker CLI not found on PATH. Please install Docker Desktop:")
         print("  https://www.docker.com/get-started")

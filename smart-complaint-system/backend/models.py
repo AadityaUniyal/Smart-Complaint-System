@@ -133,7 +133,6 @@ class User(UserMixin, db.Model):
 
     @classmethod
     def find_by_student_id(cls, student_id):
-        """Find user by student ID"""
         return cls.query.filter_by(student_id=student_id).first()
 
     def to_dict(self):
@@ -203,7 +202,6 @@ class Complaint(db.Model):
     assigned_admin = db.relationship('User', foreign_keys=[assigned_to], backref='assigned_complaints')
 
     def generate_complaint_id(self):
-        """Generate unique complaint ID"""
         year = datetime.now().year
         month = datetime.now().month
         

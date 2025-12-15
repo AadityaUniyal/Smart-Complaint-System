@@ -1,4 +1,4 @@
-// Global Variables
+// App variables
 let currentUser = null;
 let departments = [];
 let courses = [];
@@ -8,7 +8,7 @@ let complaints = [];
 // API Base URL
 const API_BASE = 'http://localhost:5000/api';
 
-// DOM Elements
+// Page elements
 const loadingScreen = document.getElementById('loading-screen');
 const navbar = document.getElementById('navbar');
 const navToggle = document.getElementById('nav-toggle');
@@ -17,32 +17,32 @@ const loginModal = document.getElementById('login-modal');
 const modalBody = document.getElementById('modal-body');
 const toast = document.getElementById('toast');
 
-// Initialize Application
+// App startup
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
 });
 
 async function initializeApp() {
-    // Show loading screen
+    // Show loading
     showLoading();
     
-    // Load initial data
+    // Load data
     await loadInitialData();
     
-    // Setup event listeners
+    // Setup events
     setupEventListeners();
     
-    // Animate counters
+    // Start counters
     setTimeout(() => {
         animateCounters();
     }, 1000);
     
-    // Hide loading screen
+    // Hide loading
     setTimeout(() => {
         hideLoading();
     }, 2000);
     
-    // Check if user is logged in
+    // Check login status
     checkAuthStatus();
 }
 
@@ -54,17 +54,17 @@ function hideLoading() {
     loadingScreen.classList.add('hidden');
 }
 
-// Event Listeners
+// Event setup
 function setupEventListeners() {
-    // Navigation toggle
+    // Mobile menu
     if (navToggle) {
         navToggle.addEventListener('click', toggleMobileMenu);
     }
     
-    // Navbar scroll effect
+    // Navbar scroll
     window.addEventListener('scroll', handleNavbarScroll);
     
-    // Smooth scrolling for navigation links
+    // Smooth scroll links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
@@ -78,7 +78,7 @@ function setupEventListeners() {
         });
     });
     
-    // Close modal when clicking outside
+    // Modal close on outside click
     if (loginModal) {
         loginModal.addEventListener('click', function(e) {
             if (e.target === loginModal) {
@@ -91,7 +91,7 @@ function setupEventListeners() {
 function toggleMobileMenu() {
     navMenu.classList.toggle('active');
     
-    // Animate hamburger menu
+    // Hamburger animation
     const bars = navToggle.querySelectorAll('.bar');
     bars.forEach((bar, index) => {
         if (navMenu.classList.contains('active')) {

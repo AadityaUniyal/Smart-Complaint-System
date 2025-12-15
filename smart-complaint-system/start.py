@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Smart Complaint System - Startup Script
-Starts both backend and frontend servers
+Startup script for the complaint system
 """
 
 import subprocess
@@ -12,7 +11,6 @@ import threading
 from pathlib import Path
 
 def run_backend():
-    """Start the Flask backend server"""
     backend_dir = Path(__file__).parent / "backend"
     os.chdir(backend_dir)
     
@@ -25,7 +23,6 @@ def run_backend():
         print(f"❌ Backend server error: {e}")
 
 def run_frontend():
-    """Start the frontend server"""
     frontend_dir = Path(__file__).parent / "frontend"
     os.chdir(frontend_dir)
     
@@ -39,7 +36,6 @@ def run_frontend():
         print(f"❌ Frontend server error: {e}")
 
 def main():
-    """Main function to start both servers"""
     print("🎓 Smart Complaint System")
     print("=" * 50)
     

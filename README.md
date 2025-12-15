@@ -11,7 +11,7 @@ A modern, real-time complaint management system for educational institutions wit
 
 ### 👨‍🎓 For Students
 - **Easy Registration**: Comprehensive student profile creation
-- **Smart Complaint Submission**: Category-based complaint system with real-time validation
+- **Intelligent Complaint Submission**: Category-based complaint system with real-time validation
 - **Personal Dashboard**: Track complaint status with live updates
 - **Real-time Updates**: Auto-refresh every 10 seconds
 - **Status Filtering**: Filter complaints by status (Pending, In Progress, Resolved)

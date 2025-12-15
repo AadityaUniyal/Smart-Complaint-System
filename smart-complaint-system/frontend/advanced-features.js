@@ -1,7 +1,4 @@
-/**
- * Advanced Features for Smart Complaint System
- * Modern UI/UX enhancements and interactions
- */
+// Enhanced UI features
 
 class AdvancedFeatures {
     constructor() {
@@ -24,20 +21,20 @@ class AdvancedFeatures {
         this.setupSoundEffects();
     }
 
-    // Particle Background Animation
+    // Background particles
     createParticleBackground() {
         const particlesContainer = document.createElement('div');
         particlesContainer.className = 'particles-bg';
         document.body.appendChild(particlesContainer);
 
-        // Create particles
+        // Add particles
         for (let i = 0; i < 50; i++) {
             setTimeout(() => {
                 this.createParticle(particlesContainer);
             }, i * 100);
         }
 
-        // Continuously create new particles
+        // Keep adding particles
         setInterval(() => {
             this.createParticle(particlesContainer);
         }, 2000);
@@ -50,13 +47,13 @@ class AdvancedFeatures {
         particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
         particle.style.animationDelay = Math.random() * 2 + 's';
         
-        // Random colors
+        // Color options
         const colors = ['rgba(229, 9, 20, 0.3)', 'rgba(0, 168, 225, 0.3)', 'rgba(255, 107, 107, 0.3)'];
         particle.style.background = colors[Math.floor(Math.random() * colors.length)];
         
         container.appendChild(particle);
 
-        // Remove particle after animation
+        // Clean up particle
         setTimeout(() => {
             if (particle.parentNode) {
                 particle.parentNode.removeChild(particle);
@@ -64,7 +61,7 @@ class AdvancedFeatures {
         }, 6000);
     }
 
-    // Theme Toggle
+    // Theme switcher
     createThemeToggle() {
         const themeToggle = document.createElement('div');
         themeToggle.className = 'theme-toggle';
@@ -103,7 +100,7 @@ class AdvancedFeatures {
         this.showNotification('Theme changed to ' + this.theme + ' mode', 'info');
     }
 
-    // Advanced Notification System
+    // Notification center
     createNotificationCenter() {
         const notificationCenter = document.createElement('div');
         notificationCenter.className = 'notification-center';
@@ -138,7 +135,7 @@ class AdvancedFeatures {
         // Show toast notification
         this.showToast(message, type);
         
-        // Auto-remove non-persistent notifications
+        // Auto remove notifications
         if (!persistent) {
             setTimeout(() => {
                 this.removeNotification(notification.id);
@@ -166,7 +163,7 @@ class AdvancedFeatures {
         `).join('');
     }
 
-    // Quick Actions Menu
+    // Quick actions
     createQuickActions() {
         const quickActions = document.createElement('div');
         quickActions.className = 'quick-actions';
@@ -199,7 +196,7 @@ class AdvancedFeatures {
         menu.classList.toggle('show');
     }
 
-    // Keyboard Shortcuts
+    // Keyboard shortcuts
     setupKeyboardShortcuts() {
         this.shortcuts = {
             'ctrl+n': () => this.quickNewComplaint(),
@@ -265,7 +262,7 @@ class AdvancedFeatures {
         }, 5000);
     }
 
-    // Auto-save functionality
+    // Auto save forms
     setupAutoSave() {
         const forms = document.querySelectorAll('form');
         forms.forEach(form => {
@@ -294,7 +291,7 @@ class AdvancedFeatures {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
         
-        // Save to localStorage
+        // Save locally
         localStorage.setItem('autosave_' + form.id, JSON.stringify({
             data,
             timestamp: Date.now()
@@ -338,7 +335,7 @@ class AdvancedFeatures {
         }
     }
 
-    // Advanced Search with Suggestions
+    // Search suggestions
     setupAdvancedSearch() {
         const searchInputs = document.querySelectorAll('input[type="text"][placeholder*="search" i]');
         searchInputs.forEach(input => {
@@ -356,7 +353,7 @@ class AdvancedFeatures {
         const query = input.value.toLowerCase();
         if (query.length < 2) return;
         
-        // Mock suggestions - in real app, this would come from API
+        // Sample suggestions
         const suggestions = [
             'WiFi issues', 'Mess food quality', 'Lab equipment', 'Library books',
             'Hostel maintenance', 'Fee payment', 'Exam schedule', 'Transport'
@@ -387,13 +384,13 @@ class AdvancedFeatures {
         input.value = suggestion;
         element.parentNode.style.display = 'none';
         
-        // Trigger search
+        // Run search
         if (typeof searchAdminComplaints === 'function') {
             searchAdminComplaints();
         }
     }
 
-    // Progress Indicators
+    // Progress rings
     createProgressIndicators() {
         const forms = document.querySelectorAll('form');
         forms.forEach(form => {
@@ -429,7 +426,7 @@ class AdvancedFeatures {
         }
     }
 
-    // Sound Effects
+    // Audio feedback
     setupSoundEffects() {
         this.sounds = {
             click: this.createSound(800, 0.1, 'sine'),
@@ -467,9 +464,9 @@ class AdvancedFeatures {
         }
     }
 
-    // Utility Methods
+    // Helper functions
     showToast(message, type) {
-        // Enhanced toast with sound
+        // Toast with sound
         this.playSound(type === 'error' ? 'error' : type === 'success' ? 'success' : 'notification');
         
         if (typeof showToast === 'function') {
@@ -508,7 +505,7 @@ class AdvancedFeatures {
         return timestamp.toLocaleDateString();
     }
 
-    // Quick Actions
+    // Quick action handlers
     quickNewComplaint() {
         this.playSound('click');
         if (typeof setDashboardView === 'function') {
@@ -552,7 +549,7 @@ class AdvancedFeatures {
     }
 
     closeModals() {
-        // Close any open modals
+        // Close modals
         const modals = document.querySelectorAll('.modal, .notification-center.show, .quick-actions-menu.show');
         modals.forEach(modal => {
             modal.classList.remove('show', 'active');
@@ -568,17 +565,17 @@ class AdvancedFeatures {
     }
 }
 
-// Initialize Advanced Features
+// Start features
 let advancedFeatures;
 document.addEventListener('DOMContentLoaded', () => {
     advancedFeatures = new AdvancedFeatures();
     
-    // Add welcome notification
+    // Welcome message
     setTimeout(() => {
         advancedFeatures.showNotification('Welcome to Smart Complaint System! 🎉', 'success', true);
         advancedFeatures.showNotification('Press Ctrl+/ to see keyboard shortcuts', 'info');
     }, 2000);
 });
 
-// Export for global access
+// Global access
 window.advancedFeatures = advancedFeatures;
