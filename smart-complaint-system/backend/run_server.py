@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-"""
-Simple server runner that ensures environment variables are loaded properly
-"""
 import os
 from dotenv import load_dotenv
 import subprocess
@@ -35,17 +31,48 @@ def maybe_run_docker_check():
         sys.exit(res.returncode)
 
 if __name__ == '__main__':
-    print("\n🚀 Starting Smart Complaint System Backend...")
-    maybe_run_docker_check()
-    print("📊 Dashboard URLs:")
-    print("   Student: http://localhost:3000/student")
-    print("   Admin:   http://localhost:3000/admin")
-    print("🔗 API Base: http://localhost:5000/api")
-    print("\n" + "="*50)
-    
-    app.run(
-        host='0.0.0.0',
-        port=5000,
-        debug=True,
-        use_reloader=False  # Disable reloader to avoid env var issues
-    )
+    try:
+        print("\n🚀 Starting Smart Complaint System Backend...")
+        print("="*60)
+        
+        # Run optional Docker check
+        maybe_run_docker_check()
+        
+        # Display connection info
+        print("🌐 Server Information:")
+        print(f"   📡 Backend API: http://localhost:5000")
+        print(f"   📊 Health Check: http://localhost:5000/api/health")
+        print(f"   🔗 Frontend: http://localhost:5173 (run separately)")
+        print("")
+        print("🎯 API Endpoints:")
+        print("   • /api/register - Student registration")
+        print("   • /api/login - User authentication")
+        print("   • /api/complaints - Complaint management")
+        print("   • /api/stats - System statistics")
+        print("")
+        print("🔐 Default Admin:")
+        print("   📧 Email: admin@college.edu")
+        print("   🔑 Password: admin123")
+        print("")
+        print("💡 Tips:")
+        print("   • Use Ctrl+C to stop the server")
+        print("   • Check logs for any database connection issues")
+        print("   • Ensure frontend server is running on port 5173")
+        print("="*60)
+        print("🟢 Server starting...")
+        
+        # Start the Flask app
+        app.run(
+            host='0.0.0.0',
+            port=5000,
+            debug=os.getenv('FLASK_ENV') != 'production',
+            use_reloader=False,  # Disable reloader to avoid env var issues
+            threaded=True
+        )
+        
+    except KeyboardInterrupt:
+        print("\n🛑 Server stopped by user")
+    except Exception as e:
+        print(f"\n❌ Server error: {e}")
+        print("💡 Check your database connection and environment variables")
+        sys.exit(1)
