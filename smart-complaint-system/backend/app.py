@@ -256,67 +256,70 @@ def register():
         # Check duplicate roll number
         if User.query.filter_by(roll_number=data.get('roll_number')).first():
             return jsonify({'error': 'Roll number already exists'}), 400
-    
-    # Handle date of birth
-    dob = None
-    if data.get('date_of_birth'):
-        try:
-            dob = datetime.strptime(data.get('date_of_birth'), '%Y-%m-%d').date()
-        except:
-            pass
-    
-    # Create student ID
-    course = Course.query.get(data.get('course_id'))
-    if course:
-        year_suffix = str(data.get('admission_year', datetime.now().year))[-2:]
-        course_code = course.code.replace(' ', '').replace('.', '').upper()
         
-        # Count students for ID generation
-        count = User.query.filter_by(
+        # Handle date of birth
+        dob = None
+        if data.get('date_of_birth'):
+            try:
+                dob = datetime.strptime(data.get('date_of_birth'), '%Y-%m-%d').date()
+            except:
+                pass
+        
+        # Create student ID
+        course = Course.query.get(data.get('course_id'))
+        if course:
+            year_suffix = str(data.get('admission_year', datetime.now().year))[-2:]
+            course_code = course.code.replace(' ', '').replace('.', '').upper()
+            
+            # Count students for ID generation
+            count = User.query.filter_by(
+                course_id=data.get('course_id'),
+                admission_year=data.get('admission_year'),
+                role='student'
+            ).count()
+            
+            student_id = f"{year_suffix}{course_code}{count+1:03d}"
+        else:
+            student_id = f"STU{datetime.now().year}{User.query.filter_by(role='student').count()+1:04d}"
+        
+        # Save student data
+        user = User(
+            student_id=student_id,
+            name=data.get('name'),
+            email=data.get('email'),
+            phone=data.get('phone'),
+            role='student',
             course_id=data.get('course_id'),
+            course_name=course.name if course else None,
+            department_id=data.get('department_id'),
+            department_name=course.department.name if course and course.department else None,
+            year=data.get('year'),
+            semester=data.get('semester'),
+            roll_number=data.get('roll_number'),
             admission_year=data.get('admission_year'),
-            role='student'
-        ).count()
+            address=data.get('address'),
+            parent_name=data.get('parent_name'),
+            parent_phone=data.get('parent_phone'),
+            hostel_room=data.get('hostel_room'),
+            blood_group=data.get('blood_group'),
+            date_of_birth=dob,
+            gender=data.get('gender'),
+            category=data.get('category')
+        )
         
-        student_id = f"{year_suffix}{course_code}{count+1:03d}"
-    else:
-        student_id = f"STU{datetime.now().year}{User.query.filter_by(role='student').count()+1:04d}"
-    
-    # Save student data
-    user = User(
-        student_id=student_id,
-        name=data.get('name'),
-        email=data.get('email'),
-        phone=data.get('phone'),
-        role='student',
-        course_id=data.get('course_id'),
-        course_name=course.name if course else None,
-        department_id=data.get('department_id'),
-        department_name=course.department.name if course and course.department else None,
-        year=data.get('year'),
-        semester=data.get('semester'),
-        roll_number=data.get('roll_number'),
-        admission_year=data.get('admission_year'),
-        address=data.get('address'),
-        parent_name=data.get('parent_name'),
-        parent_phone=data.get('parent_phone'),
-        hostel_room=data.get('hostel_room'),
-        blood_group=data.get('blood_group'),
-        date_of_birth=dob,
-        gender=data.get('gender'),
-        category=data.get('category')
-    )
-    
-    db.session.add(user)
-    db.session.commit()
-    
-    # Save to CSV
-    save_student_to_csv(user)
-    
-    return jsonify({
-        'message': 'Registration successful',
-        'user': user.to_dict()
-    }), 201
+        db.session.add(user)
+        db.session.commit()
+        
+        # Save to CSV
+        save_student_to_csv(user)
+        
+        return jsonify({
+            'message': 'Registration successful',
+            'user': user.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -915,8 +918,8 @@ try:
     from flask_limiter.util import get_remote_address
     
     limiter = Limiter(
-        app,
         key_func=get_remote_address,
+        app=app,
         default_limits=["200 per day", "50 per hour"]
     )
     
