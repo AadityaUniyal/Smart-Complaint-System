@@ -100,6 +100,34 @@ def save_student_to_csv(user):
     except Exception as e:
         print(f"❌ Error saving student to CSV: {e}")
 
+def update_complaint_in_csv(complaint):
+    """Update existing complaint in CSV file"""
+    try:
+        csv_path = os.path.join(os.path.dirname(__file__), '../data/student_complaints.csv')
+        
+        if not os.path.exists(csv_path):
+            return
+        
+        # Read existing data
+        import pandas as pd
+        df = pd.read_csv(csv_path)
+        
+        # Find and update the complaint
+        mask = df['complaint_id'] == complaint.complaint_id
+        if mask.any():
+            df.loc[mask, 'status'] = complaint.status
+            df.loc[mask, 'priority'] = complaint.priority
+            df.loc[mask, 'updated_at'] = complaint.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            if complaint.resolved_at:
+                df.loc[mask, 'resolved_at'] = complaint.resolved_at.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Save back to CSV
+            df.to_csv(csv_path, index=False)
+            print(f"✅ Complaint {complaint.complaint_id} updated in CSV")
+        
+    except Exception as e:
+        print(f"❌ Error updating complaint in CSV: {e}")
+
 def save_complaint_to_csv(complaint, student_name):
     try:
         csv_path = os.path.join(os.path.dirname(__file__), '../data/student_complaints.csv')
@@ -201,11 +229,33 @@ load_initial_data()
 # Login/Register endpoints
 @app.route('/api/register', methods=['POST'])
 def register():
-    data = request.json
-    
-    # Check existing user
-    if User.query.filter_by(email=data.get('email')).first():
-        return jsonify({'error': 'Email already registered'}), 400
+    try:
+        data = request.json
+        
+        # Enhanced validation
+        required_fields = ['name', 'email', 'phone', 'course_id', 'year', 'semester', 'roll_number', 'admission_year']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field.replace("_", " ").title()} is required'}), 400
+        
+        # Email format validation
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, data.get('email')):
+            return jsonify({'error': 'Invalid email format'}), 400
+        
+        # Phone validation
+        phone = data.get('phone', '').replace(' ', '').replace('-', '')
+        if not phone.isdigit() or len(phone) < 10:
+            return jsonify({'error': 'Invalid phone number'}), 400
+        
+        # Check existing user
+        if User.query.filter_by(email=data.get('email')).first():
+            return jsonify({'error': 'Email already registered'}), 400
+        
+        # Check duplicate roll number
+        if User.query.filter_by(roll_number=data.get('roll_number')).first():
+            return jsonify({'error': 'Roll number already exists'}), 400
     
     # Handle date of birth
     dob = None
@@ -393,16 +443,53 @@ def get_complaints():
 
 @app.route('/api/complaints/<int:id>/status', methods=['PATCH'])
 def update_status(id):
-    data = request.json
-    status = data.get('status')
-    complaint = Complaint.query.get_or_404(id)
-    complaint.status = status
-    
-    if status == 'Resolved':
-        complaint.resolved_at = datetime.utcnow()
-    
-    db.session.commit()
-    return jsonify(complaint.to_dict())
+    try:
+        data = request.json
+        status = data.get('status')
+        admin_comment = data.get('admin_comment', '')
+        
+        if status not in ['Pending', 'In Progress', 'Resolved', 'Rejected']:
+            return jsonify({'error': 'Invalid status'}), 400
+        
+        complaint = Complaint.query.get_or_404(id)
+        old_status = complaint.status
+        complaint.status = status
+        complaint.updated_at = datetime.utcnow()
+        
+        if status == 'Resolved':
+            complaint.resolved_at = datetime.utcnow()
+            complaint.actual_resolution_date = datetime.utcnow()
+        elif status == 'In Progress' and old_status == 'Pending':
+            # Track when complaint was first picked up
+            complaint.updated_at = datetime.utcnow()
+        
+        # Add status change comment if provided
+        if admin_comment and hasattr(request, 'json') and request.json.get('admin_id'):
+            admin_id = request.json.get('admin_id')
+            admin = User.query.get(admin_id)
+            if admin and admin.role == 'admin':
+                comment = Comment(
+                    complaint_id=id,
+                    admin_id=admin_id,
+                    admin_name=admin.name,
+                    text=f"Status changed to {status}. {admin_comment}"
+                )
+                db.session.add(comment)
+        
+        db.session.commit()
+        
+        # Update CSV file
+        try:
+            update_complaint_in_csv(complaint)
+        except Exception as e:
+            print(f"Failed to update CSV: {e}")
+        
+        return jsonify({
+            'message': f'Complaint status updated to {status}',
+            'complaint': complaint.to_dict()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/complaints/<int:id>/priority', methods=['PATCH'])
 def update_priority(id):
@@ -541,34 +628,249 @@ def get_all_student_complaints_from_csv():
         print(f"Error reading all student complaints CSV: {e}")
         return jsonify({'error': 'Failed to fetch all student complaints', 'details': str(e)}), 500
 
+# Search and Filter endpoints
+@app.route('/api/complaints/search', methods=['GET'])
+def search_complaints():
+    try:
+        query = request.args.get('q', '').strip()
+        status = request.args.get('status', '')
+        priority = request.args.get('priority', '')
+        department_id = request.args.get('department_id', '')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        
+        # Build query
+        complaints_query = Complaint.query
+        
+        if query:
+            complaints_query = complaints_query.filter(
+                db.or_(
+                    Complaint.title.ilike(f'%{query}%'),
+                    Complaint.description.ilike(f'%{query}%')
+                )
+            )
+        
+        if status:
+            complaints_query = complaints_query.filter(Complaint.status == status)
+        
+        if priority:
+            complaints_query = complaints_query.filter(Complaint.priority == priority)
+        
+        if department_id:
+            complaints_query = complaints_query.filter(Complaint.department_id == int(department_id))
+        
+        if date_from:
+            from_date = datetime.strptime(date_from, '%Y-%m-%d')
+            complaints_query = complaints_query.filter(Complaint.created_at >= from_date)
+        
+        if date_to:
+            to_date = datetime.strptime(date_to, '%Y-%m-%d')
+            complaints_query = complaints_query.filter(Complaint.created_at <= to_date)
+        
+        complaints = complaints_query.order_by(Complaint.created_at.desc()).all()
+        
+        return jsonify({
+            'complaints': [c.to_dict() for c in complaints],
+            'total': len(complaints)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/complaints/export', methods=['GET'])
+def export_complaints():
+    try:
+        # Get all complaints with student info
+        complaints = db.session.query(Complaint, User).join(User).all()
+        
+        # Prepare CSV data
+        csv_data = []
+        for complaint, student in complaints:
+            csv_data.append({
+                'Complaint ID': complaint.complaint_id,
+                'Student ID': student.student_id,
+                'Student Name': student.name,
+                'Email': student.email,
+                'Course': student.course_name,
+                'Department': complaint.department.name if complaint.department else '',
+                'Title': complaint.title,
+                'Description': complaint.description,
+                'Category': complaint.complaint_category.name if complaint.complaint_category else '',
+                'Status': complaint.status,
+                'Priority': complaint.priority,
+                'Urgency Level': complaint.urgency_level,
+                'Created At': complaint.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'Updated At': complaint.updated_at.strftime('%Y-%m-%d %H:%M:%S') if complaint.updated_at else '',
+                'Resolved At': complaint.resolved_at.strftime('%Y-%m-%d %H:%M:%S') if complaint.resolved_at else ''
+            })
+        
+        return jsonify({
+            'data': csv_data,
+            'filename': f'complaints_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Stats endpoints
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    total_complaints = Complaint.query.count()
-    pending = Complaint.query.filter_by(status='Pending').count()
-    resolved = Complaint.query.filter_by(status='Resolved').count()
-    in_progress = Complaint.query.filter_by(status='In Progress').count()
-    
-    # Department stats
-    dept_stats = db.session.query(
-        Department.name, 
-        db.func.count(Complaint.id)
-    ).join(Complaint).group_by(Department.name).all()
-    
-    # Category stats
-    category_stats = db.session.query(
-        ComplaintCategory.name, 
-        db.func.count(Complaint.id)
-    ).join(Complaint).group_by(ComplaintCategory.name).all()
-    
-    return jsonify({
-        'total': total_complaints,
-        'pending': pending,
-        'resolved': resolved,
-        'in_progress': in_progress,
-        'departments': dict(dept_stats),
-        'categories': dict(category_stats)
-    })
+    try:
+        # Basic counts
+        total_complaints = Complaint.query.count()
+        pending = Complaint.query.filter_by(status='Pending').count()
+        resolved = Complaint.query.filter_by(status='Resolved').count()
+        in_progress = Complaint.query.filter_by(status='In Progress').count()
+        rejected = Complaint.query.filter_by(status='Rejected').count()
+        
+        # Time-based stats
+        today = datetime.now().date()
+        week_ago = today - timedelta(days=7)
+        month_ago = today - timedelta(days=30)
+        
+        today_complaints = Complaint.query.filter(
+            db.func.date(Complaint.created_at) == today
+        ).count()
+        
+        week_complaints = Complaint.query.filter(
+            Complaint.created_at >= week_ago
+        ).count()
+        
+        month_complaints = Complaint.query.filter(
+            Complaint.created_at >= month_ago
+        ).count()
+        
+        # Priority distribution
+        priority_stats = db.session.query(
+            Complaint.priority,
+            db.func.count(Complaint.id)
+        ).group_by(Complaint.priority).all()
+        
+        # Department stats
+        dept_stats = db.session.query(
+            Department.name, 
+            db.func.count(Complaint.id)
+        ).join(Complaint).group_by(Department.name).all()
+        
+        # Category stats
+        category_stats = db.session.query(
+            ComplaintCategory.name, 
+            db.func.count(Complaint.id)
+        ).join(Complaint).group_by(ComplaintCategory.name).all()
+        
+        # Average resolution time
+        resolved_complaints = Complaint.query.filter(
+            Complaint.status == 'Resolved',
+            Complaint.resolved_at.isnot(None)
+        ).all()
+        
+        avg_resolution_hours = 0
+        if resolved_complaints:
+            total_hours = sum([
+                (c.resolved_at - c.created_at).total_seconds() / 3600 
+                for c in resolved_complaints
+            ])
+            avg_resolution_hours = round(total_hours / len(resolved_complaints), 1)
+        
+        return jsonify({
+            'total': total_complaints,
+            'pending': pending,
+            'resolved': resolved,
+            'in_progress': in_progress,
+            'rejected': rejected,
+            'today': today_complaints,
+            'this_week': week_complaints,
+            'this_month': month_complaints,
+            'avg_resolution_hours': avg_resolution_hours,
+            'departments': dict(dept_stats),
+            'categories': dict(category_stats),
+            'priorities': dict(priority_stats),
+            'resolution_rate': round((resolved / total_complaints * 100), 1) if total_complaints > 0 else 0
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Bulk Operations
+@app.route('/api/complaints/bulk-update', methods=['POST'])
+def bulk_update_complaints():
+    try:
+        data = request.json
+        complaint_ids = data.get('complaint_ids', [])
+        action = data.get('action')  # 'status', 'priority', 'assign'
+        value = data.get('value')
+        admin_id = data.get('admin_id')
+        
+        if not complaint_ids or not action or not value:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        complaints = Complaint.query.filter(Complaint.id.in_(complaint_ids)).all()
+        
+        if not complaints:
+            return jsonify({'error': 'No complaints found'}), 404
+        
+        updated_count = 0
+        for complaint in complaints:
+            if action == 'status':
+                complaint.status = value
+                if value == 'Resolved':
+                    complaint.resolved_at = datetime.utcnow()
+            elif action == 'priority':
+                complaint.priority = value
+            elif action == 'assign' and admin_id:
+                complaint.assigned_to = admin_id
+            
+            complaint.updated_at = datetime.utcnow()
+            updated_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Successfully updated {updated_count} complaints',
+            'updated_count': updated_count
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Notification System
+@app.route('/api/notifications/<int:user_id>', methods=['GET'])
+def get_notifications(user_id):
+    try:
+        user = User.query.get_or_404(user_id)
+        notifications = []
+        
+        if user.role == 'student':
+            # Get student's complaint updates
+            recent_updates = Complaint.query.filter_by(student_id=user_id).filter(
+                Complaint.updated_at > datetime.utcnow() - timedelta(days=7)
+            ).order_by(Complaint.updated_at.desc()).limit(10).all()
+            
+            for complaint in recent_updates:
+                notifications.append({
+                    'id': f'complaint_{complaint.id}',
+                    'type': 'complaint_update',
+                    'title': f'Complaint {complaint.complaint_id} Updated',
+                    'message': f'Status changed to {complaint.status}',
+                    'timestamp': complaint.updated_at.isoformat(),
+                    'read': False
+                })
+        
+        elif user.role == 'admin':
+            # Get new complaints for admin
+            new_complaints = Complaint.query.filter_by(status='Pending').filter(
+                Complaint.created_at > datetime.utcnow() - timedelta(days=1)
+            ).order_by(Complaint.created_at.desc()).limit(10).all()
+            
+            for complaint in new_complaints:
+                notifications.append({
+                    'id': f'new_complaint_{complaint.id}',
+                    'type': 'new_complaint',
+                    'title': 'New Complaint Received',
+                    'message': f'{complaint.title} - {complaint.student.name}',
+                    'timestamp': complaint.created_at.isoformat(),
+                    'read': False
+                })
+        
+        return jsonify({'notifications': notifications})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Health check
 @app.route('/api/health', methods=['GET'])
