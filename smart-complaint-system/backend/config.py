@@ -35,9 +35,26 @@ class Config:
         }
     }
     
-    # Secret key for session management
+    # Security settings
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_TIME_LIMIT = None
     
     # Session configuration
     SESSION_TYPE = 'filesystem'
     PERMANENT_SESSION_LIFETIME = 3600  # 1 hour
+    SESSION_COOKIE_SECURE = os.getenv('FLASK_ENV') == 'production'
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    
+    # File upload settings
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+    
+    # Rate limiting
+    RATELIMIT_STORAGE_URL = 'memory://'
+    RATELIMIT_DEFAULT = "100 per hour"
+    
+    # Logging
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+    LOG_FILE = os.getenv('LOG_FILE', 'app.log')
