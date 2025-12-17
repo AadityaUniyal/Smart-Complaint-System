@@ -3203,26 +3203,85 @@ function showAddCommentForm(complaintId) {
     
     if (commentFormDiv.style.display === 'none') {
         commentFormDiv.innerHTML = `
-            <div style="padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-                <h4 style="margin-bottom: 1rem; color: #b3b3b3;">Add Admin Comment</h4>
-                <form onsubmit="submitAdminComment(event, ${complaintId})" style="display: flex; flex-direction: column; gap: 1rem;">
-                    <textarea class="form-textarea" placeholder="Enter your comment..." required style="min-height: 100px;"></textarea>
-                    <div style="display: flex; gap: 1rem;">
-                        <button type="button" class="btn btn-secondary" onclick="hideAddCommentForm(${complaintId})" style="flex: 1;">
-                            Cancel
+            <div style="padding: 1.5rem; background: linear-gradient(135deg, rgba(0, 168, 225, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border-radius: 12px; border: 1px solid rgba(0, 168, 225, 0.3); margin-top: 1rem;">
+                <h4 style="margin-bottom: 1rem; color: #00a8e1; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-comment-medical"></i>
+                    Add Admin Response
+                </h4>
+                
+                <!-- Quick Response Templates -->
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: #b3b3b3;">
+                        <i class="fas fa-bolt"></i> Quick Templates:
+                    </label>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary" onclick="insertTemplate('${complaintId}', 'investigating')" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;">
+                            🔍 Investigating
                         </button>
-                        <button type="submit" class="btn btn-prime" style="flex: 1;">
-                            <i class="fas fa-comment"></i>
-                            Add Comment
+                        <button type="button" class="btn btn-secondary" onclick="insertTemplate('${complaintId}', 'working')" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;">
+                            ⚙️ Working on it
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="insertTemplate('${complaintId}', 'resolved')" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;">
+                            ✅ Resolved
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="insertTemplate('${complaintId}', 'need_info')" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;">
+                            ℹ️ Need Info
+                        </button>
+                    </div>
+                </div>
+                
+                <form onsubmit="submitAdminComment(event, '${complaintId}')" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <textarea id="comment-textarea-${complaintId}" class="form-textarea" placeholder="Enter your response to the student..." required style="min-height: 120px; font-size: 0.95rem;"></textarea>
+                    
+                    <!-- Action Options -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="update-status-${complaintId}" style="width: 18px; height: 18px;">
+                            <span style="font-size: 0.9rem;">Update status to "In Progress"</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="notify-student-${complaintId}" checked style="width: 18px; height: 18px;">
+                            <span style="font-size: 0.9rem;">Notify student via email</span>
+                        </label>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="button" class="btn btn-secondary" onclick="hideAddCommentForm('${complaintId}')" style="flex: 1;">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-netflix" style="flex: 2;">
+                            <i class="fas fa-paper-plane"></i>
+                            Send Response
                         </button>
                     </div>
                 </form>
             </div>
         `;
         commentFormDiv.style.display = 'block';
+        
+        // Focus on textarea
+        setTimeout(() => {
+            document.getElementById(`comment-textarea-${complaintId}`)?.focus();
+        }, 100);
     } else {
         commentFormDiv.style.display = 'none';
     }
+}
+
+// Insert quick response templates
+function insertTemplate(complaintId, templateType) {
+    const textarea = document.getElementById(`comment-textarea-${complaintId}`);
+    if (!textarea) return;
+    
+    const templates = {
+        investigating: "Thank you for reporting this issue. We are currently investigating the matter and will update you shortly with our findings.",
+        working: "We have received your complaint and our team is actively working on resolving this issue. We appreciate your patience.",
+        resolved: "Good news! Your complaint has been resolved. The issue has been addressed and necessary actions have been taken. Please let us know if you need any further assistance.",
+        need_info: "Thank you for your complaint. To help us resolve this issue more effectively, could you please provide additional details about the situation?"
+    };
+    
+    textarea.value = templates[templateType] || '';
+    textarea.focus();
 }
 
 function hideAddCommentForm(complaintId) {
@@ -3236,9 +3295,23 @@ async function submitAdminComment(event, complaintId) {
     const textarea = event.target.querySelector('textarea');
     const commentText = textarea.value.trim();
     
-    if (!commentText) return;
+    if (!commentText) {
+        showToast('Please enter a comment', 'warning');
+        return;
+    }
+    
+    // Get checkbox values
+    const updateStatus = document.getElementById(`update-status-${complaintId}`)?.checked;
+    const notifyStudent = document.getElementById(`notify-student-${complaintId}`)?.checked;
     
     try {
+        // Show loading state
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        submitBtn.disabled = true;
+        
+        // Add comment
         const response = await fetch(`${API_BASE}/complaints/${complaintId}/comments`, {
             method: 'POST',
             headers: {
@@ -3250,15 +3323,40 @@ async function submitAdminComment(event, complaintId) {
             })
         });
         
-        if (response.ok) {
-            showToast('Comment added successfully', 'success');
-            hideAddCommentForm(complaintId);
-            textarea.value = '';
-        } else {
+        if (!response.ok) {
             throw new Error('Failed to add comment');
         }
+        
+        // Update status if checkbox is checked
+        if (updateStatus) {
+            await updateComplaintStatus(complaintId, 'In Progress');
+        }
+        
+        // Show success message
+        let successMessage = 'Response sent successfully!';
+        if (notifyStudent) {
+            successMessage += ' Student will be notified.';
+        }
+        
+        showToast(successMessage, 'success');
+        hideAddCommentForm(complaintId);
+        textarea.value = '';
+        
+        // Refresh the complaints to show updated data
+        setTimeout(() => {
+            refreshAdminComplaints();
+        }, 1000);
+        
     } catch (error) {
-        showToast('Failed to add comment', 'error');
+        console.error('Error submitting comment:', error);
+        showToast('Failed to send response. Please try again.', 'error');
+        
+        // Restore button state
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Response';
+            submitBtn.disabled = false;
+        }
     }
 }
 
@@ -3429,6 +3527,10 @@ window.resetComplaintForm = resetComplaintForm;
 window.resetSelectedCategory = resetSelectedCategory;
 window.loadComplaintComments = loadComplaintComments;
 window.filterAdminComplaints = filterAdminComplaints;
+window.clearAllFilters = clearAllFilters;
+window.insertTemplate = insertTemplate;
+window.showLoadingModal = showLoadingModal;
+window.hideLoadingModal = hideLoadingModal;
 window.refreshAdminComplaints = refreshAdminComplaints;
 window.updateComplaintStatus = updateComplaintStatus;
 window.updateComplaintPriority = updateComplaintPriority;
@@ -3456,13 +3558,24 @@ window.setTheme = setTheme;
 window.toggleThemeSelector = toggleThemeSelector;
 window.selectTheme = selectTheme;
 // Admin-specific functions
+// Enhanced Quick Actions with Review Modal
 function showPendingComplaints() {
     try {
+        // Clear other filters first
+        clearAllFilters();
+        
         const statusFilter = document.getElementById('status-filter');
         if (statusFilter) {
             statusFilter.value = 'Pending';
             filterAdminComplaints();
-            showToast('Showing pending complaints only', 'info');
+            
+            // Scroll to complaints section
+            const complaintsList = document.getElementById('admin-complaints-list');
+            if (complaintsList) {
+                complaintsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            
+            showToast('Showing pending complaints - Review and take action', 'info');
         } else {
             console.error('Status filter element not found');
             showToast('Filter not available', 'error');
@@ -3475,6 +3588,9 @@ function showPendingComplaints() {
 
 function showCriticalComplaints() {
     try {
+        // Clear other filters first
+        clearAllFilters();
+        
         const priorityFilter = document.getElementById('priority-filter');
         const urgencyFilter = document.getElementById('urgency-filter');
         
@@ -3482,7 +3598,14 @@ function showCriticalComplaints() {
             priorityFilter.value = 'Critical';
             urgencyFilter.value = '4';
             filterAdminComplaints();
-            showToast('Showing critical complaints only', 'info');
+            
+            // Scroll to complaints section
+            const complaintsList = document.getElementById('admin-complaints-list');
+            if (complaintsList) {
+                complaintsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            
+            showToast('Showing critical complaints - Immediate action required!', 'warning');
         } else {
             console.error('Filter elements not found');
             showToast('Filters not available', 'error');
@@ -3495,11 +3618,21 @@ function showCriticalComplaints() {
 
 function showTodayComplaints() {
     try {
+        // Clear other filters first
+        clearAllFilters();
+        
         const dateFilter = document.getElementById('date-filter');
         if (dateFilter) {
             dateFilter.value = 'today';
             filterAdminComplaints();
-            showToast('Showing today\'s complaints only', 'info');
+            
+            // Scroll to complaints section
+            const complaintsList = document.getElementById('admin-complaints-list');
+            if (complaintsList) {
+                complaintsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            
+            showToast('Showing today\'s complaints - Stay on top of new issues', 'info');
         } else {
             console.error('Date filter element not found');
             showToast('Date filter not available', 'error');
@@ -3610,7 +3743,7 @@ function testAdminButtons() {
     }
 }
 
-// Enhanced admin filtering function
+// Enhanced admin filtering function with live results display
 function filterAdminComplaints() {
     try {
         const statusFilter = document.getElementById('status-filter')?.value || '';
@@ -3620,64 +3753,128 @@ function filterAdminComplaints() {
         const dateFilter = document.getElementById('date-filter')?.value || '';
         const searchQuery = document.getElementById('search-complaints')?.value.toLowerCase() || '';
     
-    let filteredComplaints = allAdminComplaints;
-    
-    // Apply filters
-    if (statusFilter) {
-        filteredComplaints = filteredComplaints.filter(c => c.status === statusFilter);
-    }
-    
-    if (priorityFilter) {
-        filteredComplaints = filteredComplaints.filter(c => c.priority === priorityFilter);
-    }
-    
-    if (departmentFilter) {
-        filteredComplaints = filteredComplaints.filter(c => c.department_name === departmentFilter);
-    }
-    
-    if (urgencyFilter) {
-        filteredComplaints = filteredComplaints.filter(c => c.urgency_level >= parseInt(urgencyFilter));
-    }
-    
-    if (dateFilter) {
-        const now = new Date();
-        filteredComplaints = filteredComplaints.filter(c => {
-            const complaintDate = new Date(c.created_at);
-            switch(dateFilter) {
-                case 'today':
-                    return complaintDate.toDateString() === now.toDateString();
-                case 'week':
-                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    return complaintDate >= weekAgo;
-                case 'month':
-                    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                    return complaintDate >= monthAgo;
-                default:
-                    return true;
-            }
-        });
-    }
-    
-    if (searchQuery) {
-        filteredComplaints = filteredComplaints.filter(c => 
-            c.student_name.toLowerCase().includes(searchQuery) ||
-            c.title.toLowerCase().includes(searchQuery) ||
-            c.description.toLowerCase().includes(searchQuery) ||
-            c.student_id.toLowerCase().includes(searchQuery)
-        );
-    }
-    
+        let filteredComplaints = [...allAdminComplaints];
+        
+        // Track active filters for display
+        const activeFilters = [];
+        
+        // Apply filters
+        if (statusFilter) {
+            filteredComplaints = filteredComplaints.filter(c => c.status === statusFilter);
+            activeFilters.push(`Status: ${statusFilter}`);
+        }
+        
+        if (priorityFilter) {
+            filteredComplaints = filteredComplaints.filter(c => c.priority === priorityFilter);
+            activeFilters.push(`Priority: ${priorityFilter}`);
+        }
+        
+        if (departmentFilter) {
+            filteredComplaints = filteredComplaints.filter(c => c.department_name === departmentFilter);
+            activeFilters.push(`Department: ${departmentFilter}`);
+        }
+        
+        if (urgencyFilter) {
+            filteredComplaints = filteredComplaints.filter(c => c.urgency_level >= parseInt(urgencyFilter));
+            activeFilters.push(`Urgency: ${urgencyFilter}+`);
+        }
+        
+        if (dateFilter) {
+            const now = new Date();
+            filteredComplaints = filteredComplaints.filter(c => {
+                const complaintDate = new Date(c.created_at);
+                switch(dateFilter) {
+                    case 'today':
+                        return complaintDate.toDateString() === now.toDateString();
+                    case 'week':
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        return complaintDate >= weekAgo;
+                    case 'month':
+                        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        return complaintDate >= monthAgo;
+                    default:
+                        return true;
+                }
+            });
+            activeFilters.push(`Date: ${dateFilter}`);
+        }
+        
+        if (searchQuery) {
+            filteredComplaints = filteredComplaints.filter(c => 
+                c.student_name?.toLowerCase().includes(searchQuery) ||
+                c.title?.toLowerCase().includes(searchQuery) ||
+                c.description?.toLowerCase().includes(searchQuery) ||
+                c.student_id?.toLowerCase().includes(searchQuery)
+            );
+            activeFilters.push(`Search: "${searchQuery}"`);
+        }
+        
+        // Display filtered results
         displayAdminComplaints(filteredComplaints);
         
-        // Update filter info
+        // Show filter summary
         const totalFiltered = filteredComplaints.length;
         const totalAll = allAdminComplaints.length;
-        if (totalFiltered !== totalAll) {
+        
+        // Add filter summary banner above results
+        const complaintsList = document.getElementById('admin-complaints-list');
+        if (complaintsList && activeFilters.length > 0) {
+            const filterBanner = document.createElement('div');
+            filterBanner.style.cssText = 'background: linear-gradient(135deg, #00a8e1 0%, #0066cc 100%); padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;';
+            filterBanner.innerHTML = `
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-filter"></i>
+                        Filtered Results: ${totalFiltered} of ${totalAll} complaints
+                    </div>
+                    <div style="font-size: 0.9rem; opacity: 0.9; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        ${activeFilters.map(filter => `
+                            <span style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem;">
+                                ${filter}
+                            </span>
+                        `).join('')}
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="clearAllFilters()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
+                    <i class="fas fa-times"></i> Clear Filters
+                </button>
+            `;
+            complaintsList.insertBefore(filterBanner, complaintsList.firstChild);
+        }
+        
+        // Show toast notification
+        if (activeFilters.length > 0) {
             showToast(`Showing ${totalFiltered} of ${totalAll} complaints`, 'info');
         }
     } catch (error) {
         console.error('Error in filterAdminComplaints:', error);
         showToast('Error filtering complaints', 'error');
+    }
+}
+
+// Clear all filters function
+function clearAllFilters() {
+    try {
+        // Reset all filter dropdowns
+        const statusFilter = document.getElementById('status-filter');
+        const priorityFilter = document.getElementById('priority-filter');
+        const departmentFilter = document.getElementById('department-filter');
+        const urgencyFilter = document.getElementById('urgency-filter');
+        const dateFilter = document.getElementById('date-filter');
+        const searchInput = document.getElementById('search-complaints');
+        
+        if (statusFilter) statusFilter.value = '';
+        if (priorityFilter) priorityFilter.value = '';
+        if (departmentFilter) departmentFilter.value = '';
+        if (urgencyFilter) urgencyFilter.value = '';
+        if (dateFilter) dateFilter.value = '';
+        if (searchInput) searchInput.value = '';
+        
+        // Display all complaints
+        displayAdminComplaints(allAdminComplaints);
+        showToast('Filters cleared', 'success');
+    } catch (error) {
+        console.error('Error clearing filters:', error);
     }
 }
 
@@ -3711,102 +3908,343 @@ function updateAdminLastUpdatedTime() {
     }
 }
 
-function viewStudentProfile(studentId) {
-    // Show student profile modal with their information and complaint history
-    fetch(`${API_BASE}/student-complaints/${studentId}`)
-        .then(response => response.json())
-        .then(studentComplaints => {
-            const student = studentComplaints[0]; // Get student info from first complaint
-            if (!student) {
-                showToast('Student information not found', 'error');
-                return;
-            }
-            
-            // Create modal content
-            const modalContent = `
-                <div style="max-width: 600px; margin: 2rem auto; background: rgba(0,0,0,0.9); padding: 2rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                        <h2 style="color: #8b5cf6; margin: 0;">
-                            <i class="fas fa-user"></i> Student Profile
-                        </h2>
-                        <button onclick="closeStudentProfile()" style="background: none; border: none; color: #666; font-size: 1.5rem; cursor: pointer;">
-                            <i class="fas fa-times"></i>
-                        </button>
+// Enhanced Student Profile View with Complete Details
+async function viewStudentProfile(studentId) {
+    try {
+        // Show loading modal
+        showLoadingModal('Loading student profile...');
+        
+        // Fetch student details and complaints in parallel
+        const [studentResponse, complaintsResponse] = await Promise.all([
+            fetch(`${API_BASE}/students`),
+            fetch(`${API_BASE}/student-complaints/${studentId}`)
+        ]);
+        
+        if (!studentResponse.ok || !complaintsResponse.ok) {
+            throw new Error('Failed to load student data');
+        }
+        
+        const allStudents = await studentResponse.json();
+        const studentComplaints = await complaintsResponse.json();
+        
+        // Find the specific student
+        const student = allStudents.find(s => s.student_id === studentId);
+        
+        if (!student) {
+            hideLoadingModal();
+            showToast('Student information not found', 'error');
+            return;
+        }
+        
+        // Calculate statistics
+        const totalComplaints = studentComplaints.length;
+        const pendingCount = studentComplaints.filter(c => c.status === 'Pending').length;
+        const inProgressCount = studentComplaints.filter(c => c.status === 'In Progress').length;
+        const resolvedCount = studentComplaints.filter(c => c.status === 'Resolved').length;
+        const rejectedCount = studentComplaints.filter(c => c.status === 'Rejected').length;
+        
+        // Create comprehensive modal content
+        const modalContent = `
+            <div style="max-width: 900px; max-height: 90vh; margin: 2rem auto; background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,20,20,0.95) 100%); padding: 0; border-radius: 20px; border: 1px solid rgba(139, 92, 246, 0.3); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+                
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); padding: 2rem; position: relative;">
+                    <button onclick="closeStudentProfile()" style="position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.2); border: none; color: #fff; font-size: 1.5rem; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 1.5rem;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 2rem; border: 3px solid rgba(255,255,255,0.3);">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div>
+                            <h2 style="margin: 0 0 0.5rem 0; font-size: 1.8rem;">${student.name}</h2>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.9rem; opacity: 0.9;">
+                                <span><i class="fas fa-id-card"></i> ${student.student_id}</span>
+                                <span><i class="fas fa-envelope"></i> ${student.email}</span>
+                                <span><i class="fas fa-phone"></i> ${student.phone}</span>
+                            </div>
+                        </div>
                     </div>
+                </div>
+                
+                <!-- Content -->
+                <div style="padding: 2rem; overflow-y: auto; max-height: calc(90vh - 180px);">
                     
-                    <div style="background: rgba(139, 92, 246, 0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
-                        <h3 style="color: #8b5cf6; margin-bottom: 1rem;">${student.student_name}</h3>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.9rem;">
-                            <div><strong>Student ID:</strong> ${student.student_id}</div>
-                            <div><strong>Total Complaints:</strong> ${studentComplaints.length}</div>
-                            <div><strong>Pending:</strong> ${studentComplaints.filter(c => c.status === 'Pending').length}</div>
-                            <div><strong>Resolved:</strong> ${studentComplaints.filter(c => c.status === 'Resolved').length}</div>
+                    <!-- Statistics Cards -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(251, 191, 36, 0.05) 100%); padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid rgba(251, 191, 36, 0.3);">
+                            <div style="font-size: 2rem; font-weight: 700; color: #fbbf24; margin-bottom: 0.5rem;">${totalComplaints}</div>
+                            <div style="font-size: 0.85rem; color: #b3b3b3;">Total Complaints</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(251, 191, 36, 0.05) 100%); padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid rgba(251, 191, 36, 0.3);">
+                            <div style="font-size: 2rem; font-weight: 700; color: #fbbf24; margin-bottom: 0.5rem;">${pendingCount}</div>
+                            <div style="font-size: 0.85rem; color: #b3b3b3;">Pending</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%); padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid rgba(59, 130, 246, 0.3);">
+                            <div style="font-size: 2rem; font-weight: 700; color: #3b82f6; margin-bottom: 0.5rem;">${inProgressCount}</div>
+                            <div style="font-size: 0.85rem; color: #b3b3b3;">In Progress</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(74, 222, 128, 0.05) 100%); padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid rgba(74, 222, 128, 0.3);">
+                            <div style="font-size: 2rem; font-weight: 700; color: #4ade80; margin-bottom: 0.5rem;">${resolvedCount}</div>
+                            <div style="font-size: 0.85rem; color: #b3b3b3;">Resolved</div>
                         </div>
                     </div>
                     
-                    <h4 style="margin-bottom: 1rem; color: #b3b3b3;">Complaint History:</h4>
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        ${studentComplaints.map(complaint => `
-                            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                                    <strong style="color: #fff;">${complaint.title}</strong>
-                                    <span style="
-                                        padding: 0.2rem 0.5rem;
-                                        border-radius: 10px;
-                                        font-size: 0.7rem;
-                                        background: ${getStatusColor(complaint.status).bg};
-                                        color: ${getStatusColor(complaint.status).color};
-                                    ">${complaint.status}</span>
-                                </div>
-                                <p style="color: #b3b3b3; font-size: 0.9rem; margin-bottom: 0.5rem;">
-                                    ${complaint.description.length > 100 ? complaint.description.substring(0, 100) + '...' : complaint.description}
-                                </p>
-                                <div style="font-size: 0.8rem; color: #666;">
-                                    ${complaint.category} • ${new Date(complaint.created_at).toLocaleDateString()}
-                                </div>
+                    <!-- Academic Information -->
+                    <div style="background: rgba(0, 168, 225, 0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid rgba(0, 168, 225, 0.3);">
+                        <h3 style="color: #00a8e1; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-graduation-cap"></i>
+                            Academic Information
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; font-size: 0.95rem;">
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Course</div>
+                                <div style="color: #fff; font-weight: 500;">${student.course_name || 'N/A'}</div>
                             </div>
-                        `).join('')}
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Department</div>
+                                <div style="color: #fff; font-weight: 500;">${student.department_name || 'N/A'}</div>
+                            </div>
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Year & Semester</div>
+                                <div style="color: #fff; font-weight: 500;">Year ${student.year || 'N/A'}, Semester ${student.semester || 'N/A'}</div>
+                            </div>
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Roll Number</div>
+                                <div style="color: #fff; font-weight: 500;">${student.roll_number || 'N/A'}</div>
+                            </div>
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Admission Year</div>
+                                <div style="color: #fff; font-weight: 500;">${student.admission_year || 'N/A'}</div>
+                            </div>
+                            ${student.hostel_room ? `
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Hostel Room</div>
+                                <div style="color: #fff; font-weight: 500;">${student.hostel_room}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Personal Information -->
+                    <div style="background: rgba(139, 92, 246, 0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid rgba(139, 92, 246, 0.3);">
+                        <h3 style="color: #8b5cf6; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-user-circle"></i>
+                            Personal Information
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; font-size: 0.95rem;">
+                            ${student.date_of_birth ? `
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Date of Birth</div>
+                                <div style="color: #fff; font-weight: 500;">${new Date(student.date_of_birth).toLocaleDateString()}</div>
+                            </div>
+                            ` : ''}
+                            ${student.gender ? `
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Gender</div>
+                                <div style="color: #fff; font-weight: 500;">${student.gender}</div>
+                            </div>
+                            ` : ''}
+                            ${student.blood_group ? `
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Blood Group</div>
+                                <div style="color: #fff; font-weight: 500;">${student.blood_group}</div>
+                            </div>
+                            ` : ''}
+                            ${student.category ? `
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Category</div>
+                                <div style="color: #fff; font-weight: 500;">${student.category}</div>
+                            </div>
+                            ` : ''}
+                            ${student.address ? `
+                            <div style="grid-column: 1 / -1;">
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Address</div>
+                                <div style="color: #fff; font-weight: 500;">${student.address}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Parent/Guardian Information -->
+                    ${student.parent_name || student.parent_phone ? `
+                    <div style="background: rgba(236, 72, 153, 0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid rgba(236, 72, 153, 0.3);">
+                        <h3 style="color: #ec4899; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-users"></i>
+                            Parent/Guardian Information
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; font-size: 0.95rem;">
+                            ${student.parent_name ? `
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Parent/Guardian Name</div>
+                                <div style="color: #fff; font-weight: 500;">${student.parent_name}</div>
+                            </div>
+                            ` : ''}
+                            ${student.parent_phone ? `
+                            <div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 0.3rem;">Contact Number</div>
+                                <div style="color: #fff; font-weight: 500;">${student.parent_phone}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Complaint History -->
+                    <div style="background: rgba(239, 68, 68, 0.1); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <h3 style="color: #ef4444; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-history"></i>
+                            Complaint History (${totalComplaints})
+                        </h3>
+                        ${totalComplaints > 0 ? `
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            ${studentComplaints.map((complaint, index) => `
+                                <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; border-left: 4px solid ${getStatusColor(complaint.status).color}; transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                                        <div>
+                                            <strong style="color: #fff; font-size: 1.1rem;">${complaint.title}</strong>
+                                            <div style="font-size: 0.8rem; color: #666; margin-top: 0.3rem;">
+                                                #${complaint.complaint_id} • ${new Date(complaint.created_at).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                            <span style="
+                                                padding: 0.3rem 0.8rem;
+                                                border-radius: 15px;
+                                                font-size: 0.75rem;
+                                                font-weight: 600;
+                                                background: ${getStatusColor(complaint.status).bg};
+                                                color: ${getStatusColor(complaint.status).color};
+                                            ">${complaint.status}</span>
+                                            <span style="
+                                                padding: 0.3rem 0.8rem;
+                                                border-radius: 15px;
+                                                font-size: 0.75rem;
+                                                font-weight: 600;
+                                                background: ${getPriorityColor(complaint.priority).bg};
+                                                color: ${getPriorityColor(complaint.priority).text};
+                                            ">${complaint.priority}</span>
+                                        </div>
+                                    </div>
+                                    <p style="color: #b3b3b3; font-size: 0.95rem; margin-bottom: 1rem; line-height: 1.6;">
+                                        ${complaint.description}
+                                    </p>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; font-size: 0.85rem; color: #666;">
+                                        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                                            <span><i class="fas fa-tag"></i> ${complaint.category}</span>
+                                            <span><i class="fas fa-building"></i> ${complaint.department}</span>
+                                            ${complaint.urgency_level ? `<span><i class="fas fa-exclamation-circle"></i> Urgency: ${complaint.urgency_level}/5</span>` : ''}
+                                        </div>
+                                        ${complaint.resolved_at ? `
+                                        <span style="color: #4ade80;">
+                                            <i class="fas fa-check-circle"></i> Resolved: ${new Date(complaint.resolved_at).toLocaleDateString()}
+                                        </span>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ` : `
+                        <div style="text-align: center; padding: 3rem; color: #666;">
+                            <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p>No complaints submitted yet</p>
+                        </div>
+                        `}
                     </div>
                 </div>
-            `;
-            
-            // Show modal
-            const modal = document.createElement('div');
-            modal.id = 'student-profile-modal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.8);
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                backdrop-filter: blur(10px);
-            `;
-            modal.innerHTML = modalContent;
-            document.body.appendChild(modal);
-            
-            // Add close function to window
-            window.closeStudentProfile = () => {
-                document.body.removeChild(modal);
-                delete window.closeStudentProfile;
-            };
-            
-            // Close on outside click
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    window.closeStudentProfile();
+            </div>
+        `;
+        
+        hideLoadingModal();
+        
+        // Show modal
+        const modal = document.createElement('div');
+        modal.id = 'student-profile-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease-out;
+        `;
+        modal.innerHTML = modalContent;
+        document.body.appendChild(modal);
+        
+        // Add close function to window
+        window.closeStudentProfile = () => {
+            modal.style.animation = 'fadeOut 0.3s ease-out';
+            setTimeout(() => {
+                if (document.body.contains(modal)) {
+                    document.body.removeChild(modal);
                 }
-            });
-        })
-        .catch(error => {
-            console.error('Error loading student profile:', error);
-            showToast('Failed to load student profile', 'error');
+                delete window.closeStudentProfile;
+            }, 300);
+        };
+        
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                window.closeStudentProfile();
+            }
         });
+        
+        // Close on Escape key
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                window.closeStudentProfile();
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+        
+    } catch (error) {
+        hideLoadingModal();
+        console.error('Error loading student profile:', error);
+        showToast('Failed to load student profile', 'error');
+    }
 }
+
+// Helper functions for loading modal
+function showLoadingModal(message = 'Loading...') {
+    const loadingModal = document.createElement('div');
+    loadingModal.id = 'loading-modal';
+    loadingModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+    `;
+    loadingModal.innerHTML = `
+        <div style="text-align: center; color: #fff;">
+            <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
+            <p style="font-size: 1.1rem;">${message}</p>
+        </div>
+    `;
+    document.body.appendChild(loadingModal);
+}
+
+function hideLoadingModal() {
+    const loadingModal = document.getElementById('loading-modal');
+    if (loadingModal && document.body.contains(loadingModal)) {
+        document.body.removeChild(loadingModal);
+    }
+}
+
+
 
 // Complete the loadAllComplaints function
 function loadAllComplaints() {
