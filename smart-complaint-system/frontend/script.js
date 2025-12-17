@@ -4,6 +4,7 @@ let departments = [];
 let courses = [];
 let categories = [];
 let complaints = [];
+let currentTheme = 'netflix';
 
 // API Base URL
 const API_BASE = 'http://localhost:5000/api';
@@ -17,8 +18,138 @@ const loginModal = document.getElementById('login-modal');
 const modalBody = document.getElementById('modal-body');
 const toast = document.getElementById('toast');
 
+// Theme Management
+function initializeTheme() {
+    // Load saved theme or use default
+    const savedTheme = localStorage.getItem('smartcomplaint-theme') || 'netflix';
+    setTheme(savedTheme);
+}
+
+function setTheme(themeName) {
+    currentTheme = themeName;
+    document.documentElement.setAttribute('data-theme', themeName);
+    localStorage.setItem('smartcomplaint-theme', themeName);
+    
+    // Update theme selector if it exists
+    const themeSelector = document.getElementById('theme-selector');
+    if (themeSelector) {
+        themeSelector.value = themeName;
+    }
+    
+    console.log(`🎨 Theme changed to: ${themeName}`);
+}
+
+function getAvailableThemes() {
+    return [
+        { id: 'netflix', name: 'Netflix Dark', description: 'Classic dark theme with red accents' },
+        { id: 'ocean', name: 'Ocean Blue', description: 'Cool blue gradient theme' },
+        { id: 'forest', name: 'Forest Green', description: 'Natural green gradient theme' },
+        { id: 'sunset', name: 'Sunset Orange', description: 'Warm orange gradient theme' },
+        { id: 'purple', name: 'Purple Galaxy', description: 'Cosmic purple gradient theme' },
+        { id: 'light', name: 'Light Mode', description: 'Clean light theme' }
+    ];
+}
+
+function createThemeSelector() {
+    const themes = getAvailableThemes();
+    
+    return `
+        <div class="theme-selector-container" style="position: relative;">
+            <label style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                <i class="fas fa-palette"></i> Theme
+            </label>
+            <select id="theme-selector" class="form-select" onchange="setTheme(this.value)" style="width: 100%;">
+                ${themes.map(theme => `
+                    <option value="${theme.id}" ${currentTheme === theme.id ? 'selected' : ''}>
+                        ${theme.name}
+                    </option>
+                `).join('')}
+            </select>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                ${themes.find(t => t.id === currentTheme)?.description || 'Select a theme'}
+            </div>
+        </div>
+    `;
+}
+
+function toggleThemeSelector() {
+    // Remove existing dropdown
+    const existingDropdown = document.querySelector('.theme-dropdown');
+    if (existingDropdown) {
+        existingDropdown.remove();
+        return;
+    }
+    
+    // Create new dropdown
+    const themes = getAvailableThemes();
+    const dropdown = document.createElement('div');
+    dropdown.className = 'theme-dropdown';
+    dropdown.innerHTML = `
+        <h3 style="margin: 0 0 1rem 0; color: var(--text-primary); font-size: 1rem;">
+            <i class="fas fa-palette"></i> Choose Theme
+        </h3>
+        <div class="theme-grid">
+            ${themes.map(theme => `
+                <div class="theme-option ${currentTheme === theme.id ? 'active' : ''}" 
+                     onclick="selectTheme('${theme.id}')">
+                    <div class="theme-preview ${theme.id}"></div>
+                    <div class="theme-info">
+                        <h4>${theme.name}</h4>
+                        <p>${theme.description}</p>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    // Position dropdown
+    const themeBtn = document.querySelector('.theme-toggle-btn');
+    const rect = themeBtn.getBoundingClientRect();
+    dropdown.style.position = 'fixed';
+    dropdown.style.top = (rect.bottom + 10) + 'px';
+    dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+    
+    document.body.appendChild(dropdown);
+    
+    // Show dropdown
+    setTimeout(() => dropdown.classList.add('active'), 10);
+    
+    // Close on outside click
+    setTimeout(() => {
+        document.addEventListener('click', function closeDropdown(e) {
+            if (!dropdown.contains(e.target) && !themeBtn.contains(e.target)) {
+                dropdown.classList.remove('active');
+                setTimeout(() => dropdown.remove(), 300);
+                document.removeEventListener('click', closeDropdown);
+            }
+        });
+    }, 100);
+}
+
+function selectTheme(themeId) {
+    setTheme(themeId);
+    
+    // Update active state
+    document.querySelectorAll('.theme-option').forEach(option => {
+        option.classList.remove('active');
+    });
+    document.querySelector(`[onclick="selectTheme('${themeId}')"]`).classList.add('active');
+    
+    // Close dropdown after a short delay
+    setTimeout(() => {
+        const dropdown = document.querySelector('.theme-dropdown');
+        if (dropdown) {
+            dropdown.classList.remove('active');
+            setTimeout(() => dropdown.remove(), 300);
+        }
+    }, 500);
+    
+    showToast(`Theme changed to ${getAvailableThemes().find(t => t.id === themeId)?.name}`, 'success');
+}
+
 // App startup
 document.addEventListener('DOMContentLoaded', function() {
+    initializeTheme();
     initializeApp();
 });
 
@@ -151,10 +282,12 @@ function animateCounters() {
 // Enhanced API Functions
 async function loadInitialData() {
     try {
-        const [deptResponse, courseResponse, categoriesResponse] = await Promise.all([
+        const [deptResponse, courseResponse, categoriesResponse, studentsResponse, complaintsResponse] = await Promise.all([
             fetch(`${API_BASE}/departments`),
             fetch(`${API_BASE}/courses`),
-            fetch(`${API_BASE}/complaint-categories`)
+            fetch(`${API_BASE}/complaint-categories`),
+            fetch(`${API_BASE}/students`),
+            fetch(`${API_BASE}/all-student-complaints`)
         ]);
         
         if (deptResponse.ok) {
@@ -168,10 +301,62 @@ async function loadInitialData() {
         if (categoriesResponse.ok) {
             categories = await categoriesResponse.json();
         }
+        
+        // Load real statistics for homepage
+        let totalStudents = 0;
+        let totalComplaints = 0;
+        let resolvedComplaints = 0;
+        
+        if (studentsResponse.ok) {
+            const students = await studentsResponse.json();
+            totalStudents = students.length;
+        }
+        
+        if (complaintsResponse.ok) {
+            const allComplaints = await complaintsResponse.json();
+            totalComplaints = allComplaints.length;
+            resolvedComplaints = allComplaints.filter(c => c.status === 'Resolved').length;
+        }
+        
+        // Update homepage statistics with real data
+        updateHomepageStats(totalStudents, departments.length, totalComplaints, resolvedComplaints);
+        
     } catch (error) {
         console.error('Failed to load initial data:', error);
         showToast('Failed to load data. Please refresh the page.', 'error');
     }
+}
+
+// Update homepage statistics with real database data
+function updateHomepageStats(totalStudents, totalDepartments, totalComplaints, resolvedComplaints) {
+    // Update hero stats
+    const studentCountElement = document.querySelector('.stat-number[data-count="10000"]');
+    const departmentCountElement = document.querySelector('.stat-number[data-count="18"]');
+    
+    if (studentCountElement) {
+        studentCountElement.setAttribute('data-count', totalStudents);
+        studentCountElement.textContent = '0'; // Will be animated by animateCounters
+    }
+    
+    if (departmentCountElement) {
+        departmentCountElement.setAttribute('data-count', totalDepartments);
+        departmentCountElement.textContent = '0'; // Will be animated by animateCounters
+    }
+    
+    // Update dashboard preview stats
+    const totalComplaintsElement = document.querySelector('.dashboard-stat .stat-value');
+    const resolvedPercentElement = document.querySelectorAll('.dashboard-stat .stat-value')[1];
+    
+    if (totalComplaintsElement) {
+        totalComplaintsElement.textContent = totalComplaints;
+    }
+    
+    if (resolvedPercentElement && totalComplaints > 0) {
+        const resolvedPercent = Math.round((resolvedComplaints / totalComplaints) * 100);
+        resolvedPercentElement.textContent = `${resolvedPercent}%`;
+    }
+    
+    console.log(`📊 Homepage stats updated: ${totalStudents} students, ${totalDepartments} departments, ${totalComplaints} complaints, ${resolvedComplaints} resolved`);
 }
 
 // Enhanced Search Function
@@ -2444,8 +2629,20 @@ async function loadAdminDashboardContent() {
             }
         }
         
+        // Load students data
+        let allStudents = [];
+        try {
+            const studentsResponse = await fetch(`${API_BASE}/students`);
+            if (studentsResponse.ok) {
+                allStudents = await studentsResponse.json();
+                console.log('Loaded students:', allStudents.length);
+            }
+        } catch (error) {
+            console.error('Failed to load students:', error);
+        }
+        
         // Calculate additional statistics
-        const totalStudents = new Set(allComplaints.map(c => c.student_id)).size;
+        const totalStudents = allStudents.length;
         const todayComplaints = allComplaints.filter(c => {
             const today = new Date().toDateString();
             const complaintDate = new Date(c.created_at).toDateString();
@@ -2603,13 +2800,24 @@ async function loadAdminDashboardContent() {
                 </div>
                 
                 <!-- All Complaints Management -->
-                <div class="glass" style="padding: 2rem; border-radius: 16px;">
+                <div class="glass" style="padding: 2rem; border-radius: 16px; margin-bottom: 2rem;">
                     <h2 style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
                         <i class="fas fa-tasks" style="color: #e50914;"></i>
                         Manage Complaints
                     </h2>
                     <div id="admin-complaints-list" style="max-height: 600px; overflow-y: auto;">
                         <!-- Admin complaints will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Students Management -->
+                <div class="glass" style="padding: 2rem; border-radius: 16px;">
+                    <h2 style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
+                        <i class="fas fa-users" style="color: #8b5cf6;"></i>
+                        Registered Students (${allStudents.length})
+                    </h2>
+                    <div id="admin-students-list" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Students will be loaded here -->
                     </div>
                 </div>
             `;
@@ -2644,6 +2852,13 @@ async function loadAdminDashboardContent() {
         
         loadAdminComplaints(allComplaints);
         generateAdminCharts(allComplaints);
+        
+        // Notify that dashboard is ready
+        setTimeout(() => {
+            console.log('🎯 Admin dashboard fully loaded and ready!');
+            console.log('💡 You can now use: checkAdminDashboardElements() or testAdminButtons()');
+        }, 500);
+        
     } catch (error) {
         console.error('Failed to load admin dashboard:', error);
         showToast('Failed to load admin dashboard: ' + error.message, 'error');
@@ -3136,9 +3351,7 @@ function showEnhancedError(message, type = 'info') {
     showToast(message, type);
 }
 
-function showDemo() {
-    showToast('Demo video coming soon!', 'info');
-}
+
 
 // Auto-refresh functionality for real-time updates
 let autoRefreshInterval = null;
@@ -3237,24 +3450,64 @@ window.exportComplaintsData = exportComplaintsData;
 window.searchAdminComplaints = searchAdminComplaints;
 window.viewStudentProfile = viewStudentProfile;
 window.loadAdminDashboardContent = loadAdminDashboardContent;
+window.checkAdminDashboardElements = checkAdminDashboardElements;
+window.testAdminButtons = testAdminButtons;
+window.setTheme = setTheme;
+window.toggleThemeSelector = toggleThemeSelector;
+window.selectTheme = selectTheme;
 // Admin-specific functions
 function showPendingComplaints() {
-    document.getElementById('status-filter').value = 'Pending';
-    filterAdminComplaints();
-    showToast('Showing pending complaints only', 'info');
+    try {
+        const statusFilter = document.getElementById('status-filter');
+        if (statusFilter) {
+            statusFilter.value = 'Pending';
+            filterAdminComplaints();
+            showToast('Showing pending complaints only', 'info');
+        } else {
+            console.error('Status filter element not found');
+            showToast('Filter not available', 'error');
+        }
+    } catch (error) {
+        console.error('Error in showPendingComplaints:', error);
+        showToast('Error filtering complaints', 'error');
+    }
 }
 
 function showCriticalComplaints() {
-    document.getElementById('priority-filter').value = 'Critical';
-    document.getElementById('urgency-filter').value = '4';
-    filterAdminComplaints();
-    showToast('Showing critical complaints only', 'info');
+    try {
+        const priorityFilter = document.getElementById('priority-filter');
+        const urgencyFilter = document.getElementById('urgency-filter');
+        
+        if (priorityFilter && urgencyFilter) {
+            priorityFilter.value = 'Critical';
+            urgencyFilter.value = '4';
+            filterAdminComplaints();
+            showToast('Showing critical complaints only', 'info');
+        } else {
+            console.error('Filter elements not found');
+            showToast('Filters not available', 'error');
+        }
+    } catch (error) {
+        console.error('Error in showCriticalComplaints:', error);
+        showToast('Error filtering complaints', 'error');
+    }
 }
 
 function showTodayComplaints() {
-    document.getElementById('date-filter').value = 'today';
-    filterAdminComplaints();
-    showToast('Showing today\'s complaints only', 'info');
+    try {
+        const dateFilter = document.getElementById('date-filter');
+        if (dateFilter) {
+            dateFilter.value = 'today';
+            filterAdminComplaints();
+            showToast('Showing today\'s complaints only', 'info');
+        } else {
+            console.error('Date filter element not found');
+            showToast('Date filter not available', 'error');
+        }
+    } catch (error) {
+        console.error('Error in showTodayComplaints:', error);
+        showToast('Error filtering complaints', 'error');
+    }
 }
 
 function exportComplaintsData() {
@@ -3301,14 +3554,71 @@ function searchAdminComplaints() {
     filterAdminComplaints();
 }
 
+// Debug function to check admin dashboard elements
+function checkAdminDashboardElements() {
+    const elements = [
+        'status-filter',
+        'priority-filter', 
+        'department-filter',
+        'urgency-filter',
+        'date-filter',
+        'search-complaints'
+    ];
+    
+    console.log('🔍 Checking admin dashboard elements:');
+    elements.forEach(id => {
+        const element = document.getElementById(id);
+        console.log(`  ${id}: ${element ? '✅ Found' : '❌ Missing'}`);
+    });
+    
+    // Also check if functions exist
+    const functions = [
+        'showPendingComplaints',
+        'showCriticalComplaints', 
+        'showTodayComplaints',
+        'exportComplaintsData',
+        'filterAdminComplaints'
+    ];
+    
+    console.log('🔍 Checking admin dashboard functions:');
+    functions.forEach(funcName => {
+        const func = window[funcName];
+        console.log(`  ${funcName}: ${typeof func === 'function' ? '✅ Found' : '❌ Missing'}`);
+    });
+}
+
+// Manual test function for buttons
+function testAdminButtons() {
+    console.log('🧪 Testing admin buttons manually...');
+    
+    try {
+        console.log('Testing showPendingComplaints...');
+        showPendingComplaints();
+        
+        setTimeout(() => {
+            console.log('Testing showCriticalComplaints...');
+            showCriticalComplaints();
+        }, 1000);
+        
+        setTimeout(() => {
+            console.log('Testing showTodayComplaints...');
+            showTodayComplaints();
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error testing buttons:', error);
+    }
+}
+
 // Enhanced admin filtering function
 function filterAdminComplaints() {
-    const statusFilter = document.getElementById('status-filter')?.value || '';
-    const priorityFilter = document.getElementById('priority-filter')?.value || '';
-    const departmentFilter = document.getElementById('department-filter')?.value || '';
-    const urgencyFilter = document.getElementById('urgency-filter')?.value || '';
-    const dateFilter = document.getElementById('date-filter')?.value || '';
-    const searchQuery = document.getElementById('search-complaints')?.value.toLowerCase() || '';
+    try {
+        const statusFilter = document.getElementById('status-filter')?.value || '';
+        const priorityFilter = document.getElementById('priority-filter')?.value || '';
+        const departmentFilter = document.getElementById('department-filter')?.value || '';
+        const urgencyFilter = document.getElementById('urgency-filter')?.value || '';
+        const dateFilter = document.getElementById('date-filter')?.value || '';
+        const searchQuery = document.getElementById('search-complaints')?.value.toLowerCase() || '';
     
     let filteredComplaints = allAdminComplaints;
     
@@ -3357,13 +3667,17 @@ function filterAdminComplaints() {
         );
     }
     
-    displayAdminComplaints(filteredComplaints);
-    
-    // Update filter info
-    const totalFiltered = filteredComplaints.length;
-    const totalAll = allAdminComplaints.length;
-    if (totalFiltered !== totalAll) {
-        showToast(`Showing ${totalFiltered} of ${totalAll} complaints`, 'info');
+        displayAdminComplaints(filteredComplaints);
+        
+        // Update filter info
+        const totalFiltered = filteredComplaints.length;
+        const totalAll = allAdminComplaints.length;
+        if (totalFiltered !== totalAll) {
+            showToast(`Showing ${totalFiltered} of ${totalAll} complaints`, 'info');
+        }
+    } catch (error) {
+        console.error('Error in filterAdminComplaints:', error);
+        showToast('Error filtering complaints', 'error');
     }
 }
 
