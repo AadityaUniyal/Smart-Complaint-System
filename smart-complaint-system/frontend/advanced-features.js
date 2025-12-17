@@ -1,4 +1,3 @@
-// Enhanced UI features
 
 class AdvancedFeatures {
     constructor() {
