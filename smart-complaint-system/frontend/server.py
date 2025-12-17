@@ -1,4 +1,3 @@
-
 import http.server
 import socketserver
 import os
@@ -30,14 +29,19 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     
     def guess_type(self, path):
         # Enhanced MIME type detection
-        mimetype, encoding = super().guess_type(path)
+        result = super().guess_type(path)
+        if isinstance(result, tuple):
+            mimetype, encoding = result
+        else:
+            mimetype, encoding = result, None
+            
         if path.endswith('.js'):
-            return 'application/javascript', encoding
+            return 'application/javascript'
         elif path.endswith('.css'):
-            return 'text/css', encoding
+            return 'text/css'
         elif path.endswith('.json'):
-            return 'application/json', encoding
-        return mimetype, encoding
+            return 'application/json'
+        return mimetype
     
     def log_message(self, format, *args):
         # Enhanced logging with timestamp
