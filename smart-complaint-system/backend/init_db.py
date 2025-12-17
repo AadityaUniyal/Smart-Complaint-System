@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-"""
-Initialize the database with all tables and sample data
-"""
 import os
 from dotenv import load_dotenv
 from flask import Flask

@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""
-Simple HTTP Server for Netflix-Style Frontend
-"""
-
 import http.server
 import socketserver
 import os
@@ -21,10 +16,39 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        # Add security headers
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-Frame-Options', 'DENY')
+        self.send_header('X-XSS-Protection', '1; mode=block')
         super().end_headers()
     
+    def do_OPTIONS(self):
+        # Handle preflight requests
+        self.send_response(200)
+        self.end_headers()
+    
+    def guess_type(self, path):
+        # Enhanced MIME type detection
+        result = super().guess_type(path)
+        if isinstance(result, tuple):
+            mimetype, encoding = result
+        else:
+            mimetype, encoding = result, None
+            
+        if path.endswith('.js'):
+            return 'application/javascript'
+        elif path.endswith('.css'):
+            return 'text/css'
+        elif path.endswith('.json'):
+            return 'application/json'
+        return mimetype
+    
     def log_message(self, format, *args):
-        # Simplified logging
+        # Enhanced logging with timestamp
+        if os.getenv('DEBUG'):
+            import datetime
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print(f"[{timestamp}] {format % args}")
         return
 
 def main():

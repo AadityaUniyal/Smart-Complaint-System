@@ -100,19 +100,59 @@ def save_student_to_csv(user):
     except Exception as e:
         print(f"❌ Error saving student to CSV: {e}")
 
+def update_complaint_in_csv(complaint):
+    """Update existing complaint in CSV file"""
+    try:
+        csv_path = os.path.join(os.path.dirname(__file__), '../data/student_complaints.csv')
+        
+        if not os.path.exists(csv_path):
+            return
+        
+        # Read existing data
+        import pandas as pd
+        df = pd.read_csv(csv_path)
+        
+        # Find and update the complaint
+        mask = df['complaint_id'] == complaint.complaint_id
+        if mask.any():
+            df.loc[mask, 'status'] = complaint.status
+            df.loc[mask, 'priority'] = complaint.priority
+            df.loc[mask, 'updated_at'] = complaint.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            if complaint.resolved_at:
+                df.loc[mask, 'resolved_at'] = complaint.resolved_at.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Save back to CSV
+            df.to_csv(csv_path, index=False)
+            print(f"✅ Complaint {complaint.complaint_id} updated in CSV")
+        
+    except Exception as e:
+        print(f"❌ Error updating complaint in CSV: {e}")
+
 def save_complaint_to_csv(complaint, student_name):
     try:
         csv_path = os.path.join(os.path.dirname(__file__), '../data/student_complaints.csv')
         
+        # Get student info more reliably
+        student = User.query.get(complaint.student_id) if complaint.student_id else None
+        student_id_str = student.student_id if student else ''
+        
+        # Get category and department info more reliably
+        category = ComplaintCategory.query.get(complaint.category_id) if complaint.category_id else None
+        department = Department.query.get(complaint.department_id) if complaint.department_id else None
+        
+        # Debug the queries
+        print(f"   Category ID: {complaint.category_id}, Found: {category.name if category else 'None'}")
+        print(f"   Department ID: {complaint.department_id}, Found: {department.name if department else 'None'}")
+        
         # Complaint data for CSV
         complaint_data = {
             'complaint_id': complaint.complaint_id,
-            'student_id': complaint.student.student_id if complaint.student else '',
+            'student_id': student_id_str,
             'student_name': student_name,
             'title': complaint.title,
             'description': complaint.description,
-            'category': complaint.category.name if complaint.category else '',
-            'department': complaint.department.name if complaint.department else '',
+            'category': category.name if category else '',
+            'department': department.name if department else '',
             'status': complaint.status,
             'priority': complaint.priority,
             'urgency_level': complaint.urgency_level,
@@ -122,8 +162,25 @@ def save_complaint_to_csv(complaint, student_name):
             'admin_comments': ''
         }
         
+        print(f"🔍 Debug - Saving complaint to CSV:")
+        print(f"   Complaint ID: {complaint.complaint_id}")
+        print(f"   Student ID: {student_id_str}")
+        print(f"   Student Name: {student_name}")
+        print(f"   Category: {category.name if category else 'None'}")
+        print(f"   Department: {department.name if department else 'None'}")
+        
         # Check if file exists and has data
         file_exists = os.path.exists(csv_path)
+        print(f"   CSV file exists: {file_exists}")
+        print(f"   CSV path: {csv_path}")
+        
+        # Ensure file ends with newline if it exists and has content
+        if file_exists and os.path.getsize(csv_path) > 0:
+            with open(csv_path, 'r+', encoding='utf-8') as f:
+                f.seek(0, 2)  # Go to end of file
+                f.seek(f.tell() - 1)  # Go back one character
+                if f.read(1) != '\n':
+                    f.write('\n')
         
         with open(csv_path, 'a', newline='', encoding='utf-8') as csvfile:
             fieldnames = list(complaint_data.keys())
@@ -131,14 +188,19 @@ def save_complaint_to_csv(complaint, student_name):
             
             # Write header if file is new or empty
             if not file_exists or os.path.getsize(csv_path) == 0:
+                print(f"   Writing CSV header...")
                 writer.writeheader()
             
+            print(f"   Writing complaint data to CSV...")
             writer.writerow(complaint_data)
+            print(f"   Data written successfully")
         
         print(f"✅ Complaint {complaint.complaint_id} saved to CSV")
         
     except Exception as e:
         print(f"❌ Error saving complaint to CSV: {e}")
+        import traceback
+        traceback.print_exc()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -201,72 +263,97 @@ load_initial_data()
 # Login/Register endpoints
 @app.route('/api/register', methods=['POST'])
 def register():
-    data = request.json
-    
-    # Check existing user
-    if User.query.filter_by(email=data.get('email')).first():
-        return jsonify({'error': 'Email already registered'}), 400
-    
-    # Handle date of birth
-    dob = None
-    if data.get('date_of_birth'):
-        try:
-            dob = datetime.strptime(data.get('date_of_birth'), '%Y-%m-%d').date()
-        except:
-            pass
-    
-    # Create student ID
-    course = Course.query.get(data.get('course_id'))
-    if course:
-        year_suffix = str(data.get('admission_year', datetime.now().year))[-2:]
-        course_code = course.code.replace(' ', '').replace('.', '').upper()
+    try:
+        data = request.json
         
-        # Count students for ID generation
-        count = User.query.filter_by(
+        # Enhanced validation
+        required_fields = ['name', 'email', 'phone', 'course_id', 'year', 'semester', 'roll_number', 'admission_year']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field.replace("_", " ").title()} is required'}), 400
+        
+        # Email format validation
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, data.get('email')):
+            return jsonify({'error': 'Invalid email format'}), 400
+        
+        # Phone validation
+        phone = data.get('phone', '').replace(' ', '').replace('-', '')
+        if not phone.isdigit() or len(phone) < 10:
+            return jsonify({'error': 'Invalid phone number'}), 400
+        
+        # Check existing user
+        if User.query.filter_by(email=data.get('email')).first():
+            return jsonify({'error': 'Email already registered'}), 400
+        
+        # Check duplicate roll number
+        if User.query.filter_by(roll_number=data.get('roll_number')).first():
+            return jsonify({'error': 'Roll number already exists'}), 400
+        
+        # Handle date of birth
+        dob = None
+        if data.get('date_of_birth'):
+            try:
+                dob = datetime.strptime(data.get('date_of_birth'), '%Y-%m-%d').date()
+            except:
+                pass
+        
+        # Create student ID
+        course = Course.query.get(data.get('course_id'))
+        if course:
+            year_suffix = str(data.get('admission_year', datetime.now().year))[-2:]
+            course_code = course.code.replace(' ', '').replace('.', '').upper()
+            
+            # Count students for ID generation
+            count = User.query.filter_by(
+                course_id=data.get('course_id'),
+                admission_year=data.get('admission_year'),
+                role='student'
+            ).count()
+            
+            student_id = f"{year_suffix}{course_code}{count+1:03d}"
+        else:
+            student_id = f"STU{datetime.now().year}{User.query.filter_by(role='student').count()+1:04d}"
+        
+        # Save student data
+        user = User(
+            student_id=student_id,
+            name=data.get('name'),
+            email=data.get('email'),
+            phone=data.get('phone'),
+            role='student',
             course_id=data.get('course_id'),
+            course_name=course.name if course else None,
+            department_id=data.get('department_id'),
+            department_name=course.department.name if course and course.department else None,
+            year=data.get('year'),
+            semester=data.get('semester'),
+            roll_number=data.get('roll_number'),
             admission_year=data.get('admission_year'),
-            role='student'
-        ).count()
+            address=data.get('address'),
+            parent_name=data.get('parent_name'),
+            parent_phone=data.get('parent_phone'),
+            hostel_room=data.get('hostel_room'),
+            blood_group=data.get('blood_group'),
+            date_of_birth=dob,
+            gender=data.get('gender'),
+            category=data.get('category')
+        )
         
-        student_id = f"{year_suffix}{course_code}{count+1:03d}"
-    else:
-        student_id = f"STU{datetime.now().year}{User.query.filter_by(role='student').count()+1:04d}"
-    
-    # Save student data
-    user = User(
-        student_id=student_id,
-        name=data.get('name'),
-        email=data.get('email'),
-        phone=data.get('phone'),
-        role='student',
-        course_id=data.get('course_id'),
-        course_name=course.name if course else None,
-        department_id=data.get('department_id'),
-        department_name=course.department.name if course and course.department else None,
-        year=data.get('year'),
-        semester=data.get('semester'),
-        roll_number=data.get('roll_number'),
-        admission_year=data.get('admission_year'),
-        address=data.get('address'),
-        parent_name=data.get('parent_name'),
-        parent_phone=data.get('parent_phone'),
-        hostel_room=data.get('hostel_room'),
-        blood_group=data.get('blood_group'),
-        date_of_birth=dob,
-        gender=data.get('gender'),
-        category=data.get('category')
-    )
-    
-    db.session.add(user)
-    db.session.commit()
-    
-    # Save to CSV
-    save_student_to_csv(user)
-    
-    return jsonify({
-        'message': 'Registration successful',
-        'user': user.to_dict()
-    }), 201
+        db.session.add(user)
+        db.session.commit()
+        
+        # Save to CSV
+        save_student_to_csv(user)
+        
+        return jsonify({
+            'message': 'Registration successful',
+            'user': user.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -393,16 +480,53 @@ def get_complaints():
 
 @app.route('/api/complaints/<int:id>/status', methods=['PATCH'])
 def update_status(id):
-    data = request.json
-    status = data.get('status')
-    complaint = Complaint.query.get_or_404(id)
-    complaint.status = status
-    
-    if status == 'Resolved':
-        complaint.resolved_at = datetime.utcnow()
-    
-    db.session.commit()
-    return jsonify(complaint.to_dict())
+    try:
+        data = request.json
+        status = data.get('status')
+        admin_comment = data.get('admin_comment', '')
+        
+        if status not in ['Pending', 'In Progress', 'Resolved', 'Rejected']:
+            return jsonify({'error': 'Invalid status'}), 400
+        
+        complaint = Complaint.query.get_or_404(id)
+        old_status = complaint.status
+        complaint.status = status
+        complaint.updated_at = datetime.utcnow()
+        
+        if status == 'Resolved':
+            complaint.resolved_at = datetime.utcnow()
+            complaint.actual_resolution_date = datetime.utcnow()
+        elif status == 'In Progress' and old_status == 'Pending':
+            # Track when complaint was first picked up
+            complaint.updated_at = datetime.utcnow()
+        
+        # Add status change comment if provided
+        if admin_comment and hasattr(request, 'json') and request.json.get('admin_id'):
+            admin_id = request.json.get('admin_id')
+            admin = User.query.get(admin_id)
+            if admin and admin.role == 'admin':
+                comment = Comment(
+                    complaint_id=id,
+                    admin_id=admin_id,
+                    admin_name=admin.name,
+                    text=f"Status changed to {status}. {admin_comment}"
+                )
+                db.session.add(comment)
+        
+        db.session.commit()
+        
+        # Update CSV file
+        try:
+            update_complaint_in_csv(complaint)
+        except Exception as e:
+            print(f"Failed to update CSV: {e}")
+        
+        return jsonify({
+            'message': f'Complaint status updated to {status}',
+            'complaint': complaint.to_dict()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/complaints/<int:id>/priority', methods=['PATCH'])
 def update_priority(id):
@@ -488,6 +612,15 @@ def get_complaint_categories():
         return jsonify({'error': 'Failed to fetch complaint categories', 'details': str(e)}), 500
 
 # Student endpoints
+@app.route('/api/students', methods=['GET'])
+def get_all_students():
+    """Get all students for admin dashboard"""
+    try:
+        students = User.query.filter_by(role='student').all()
+        return jsonify([student.to_dict() for student in students])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/student/<student_id>', methods=['GET'])
 def get_student_info(student_id):
     student = User.find_by_student_id(student_id)
@@ -541,34 +674,249 @@ def get_all_student_complaints_from_csv():
         print(f"Error reading all student complaints CSV: {e}")
         return jsonify({'error': 'Failed to fetch all student complaints', 'details': str(e)}), 500
 
+# Search and Filter endpoints
+@app.route('/api/complaints/search', methods=['GET'])
+def search_complaints():
+    try:
+        query = request.args.get('q', '').strip()
+        status = request.args.get('status', '')
+        priority = request.args.get('priority', '')
+        department_id = request.args.get('department_id', '')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        
+        # Build query
+        complaints_query = Complaint.query
+        
+        if query:
+            complaints_query = complaints_query.filter(
+                db.or_(
+                    Complaint.title.ilike(f'%{query}%'),
+                    Complaint.description.ilike(f'%{query}%')
+                )
+            )
+        
+        if status:
+            complaints_query = complaints_query.filter(Complaint.status == status)
+        
+        if priority:
+            complaints_query = complaints_query.filter(Complaint.priority == priority)
+        
+        if department_id:
+            complaints_query = complaints_query.filter(Complaint.department_id == int(department_id))
+        
+        if date_from:
+            from_date = datetime.strptime(date_from, '%Y-%m-%d')
+            complaints_query = complaints_query.filter(Complaint.created_at >= from_date)
+        
+        if date_to:
+            to_date = datetime.strptime(date_to, '%Y-%m-%d')
+            complaints_query = complaints_query.filter(Complaint.created_at <= to_date)
+        
+        complaints = complaints_query.order_by(Complaint.created_at.desc()).all()
+        
+        return jsonify({
+            'complaints': [c.to_dict() for c in complaints],
+            'total': len(complaints)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/complaints/export', methods=['GET'])
+def export_complaints():
+    try:
+        # Get all complaints with student info
+        complaints = db.session.query(Complaint, User).join(User, Complaint.student_id == User.id).all()
+        
+        # Prepare CSV data
+        csv_data = []
+        for complaint, student in complaints:
+            csv_data.append({
+                'Complaint ID': complaint.complaint_id,
+                'Student ID': student.student_id,
+                'Student Name': student.name,
+                'Email': student.email,
+                'Course': student.course_name,
+                'Department': complaint.department.name if complaint.department else '',
+                'Title': complaint.title,
+                'Description': complaint.description,
+                'Category': complaint.complaint_category.name if complaint.complaint_category else '',
+                'Status': complaint.status,
+                'Priority': complaint.priority,
+                'Urgency Level': complaint.urgency_level,
+                'Created At': complaint.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'Updated At': complaint.updated_at.strftime('%Y-%m-%d %H:%M:%S') if complaint.updated_at else '',
+                'Resolved At': complaint.resolved_at.strftime('%Y-%m-%d %H:%M:%S') if complaint.resolved_at else ''
+            })
+        
+        return jsonify({
+            'data': csv_data,
+            'filename': f'complaints_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Stats endpoints
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    total_complaints = Complaint.query.count()
-    pending = Complaint.query.filter_by(status='Pending').count()
-    resolved = Complaint.query.filter_by(status='Resolved').count()
-    in_progress = Complaint.query.filter_by(status='In Progress').count()
-    
-    # Department stats
-    dept_stats = db.session.query(
-        Department.name, 
-        db.func.count(Complaint.id)
-    ).join(Complaint).group_by(Department.name).all()
-    
-    # Category stats
-    category_stats = db.session.query(
-        ComplaintCategory.name, 
-        db.func.count(Complaint.id)
-    ).join(Complaint).group_by(ComplaintCategory.name).all()
-    
-    return jsonify({
-        'total': total_complaints,
-        'pending': pending,
-        'resolved': resolved,
-        'in_progress': in_progress,
-        'departments': dict(dept_stats),
-        'categories': dict(category_stats)
-    })
+    try:
+        # Basic counts
+        total_complaints = Complaint.query.count()
+        pending = Complaint.query.filter_by(status='Pending').count()
+        resolved = Complaint.query.filter_by(status='Resolved').count()
+        in_progress = Complaint.query.filter_by(status='In Progress').count()
+        rejected = Complaint.query.filter_by(status='Rejected').count()
+        
+        # Time-based stats
+        today = datetime.now().date()
+        week_ago = today - timedelta(days=7)
+        month_ago = today - timedelta(days=30)
+        
+        today_complaints = Complaint.query.filter(
+            db.func.date(Complaint.created_at) == today
+        ).count()
+        
+        week_complaints = Complaint.query.filter(
+            Complaint.created_at >= week_ago
+        ).count()
+        
+        month_complaints = Complaint.query.filter(
+            Complaint.created_at >= month_ago
+        ).count()
+        
+        # Priority distribution
+        priority_stats = db.session.query(
+            Complaint.priority,
+            db.func.count(Complaint.id)
+        ).group_by(Complaint.priority).all()
+        
+        # Department stats
+        dept_stats = db.session.query(
+            Department.name, 
+            db.func.count(Complaint.id)
+        ).join(Complaint).group_by(Department.name).all()
+        
+        # Category stats
+        category_stats = db.session.query(
+            ComplaintCategory.name, 
+            db.func.count(Complaint.id)
+        ).join(Complaint).group_by(ComplaintCategory.name).all()
+        
+        # Average resolution time
+        resolved_complaints = Complaint.query.filter(
+            Complaint.status == 'Resolved',
+            Complaint.resolved_at.isnot(None)
+        ).all()
+        
+        avg_resolution_hours = 0
+        if resolved_complaints:
+            total_hours = sum([
+                (c.resolved_at - c.created_at).total_seconds() / 3600 
+                for c in resolved_complaints
+            ])
+            avg_resolution_hours = round(total_hours / len(resolved_complaints), 1)
+        
+        return jsonify({
+            'total': total_complaints,
+            'pending': pending,
+            'resolved': resolved,
+            'in_progress': in_progress,
+            'rejected': rejected,
+            'today': today_complaints,
+            'this_week': week_complaints,
+            'this_month': month_complaints,
+            'avg_resolution_hours': avg_resolution_hours,
+            'departments': dict(dept_stats),
+            'categories': dict(category_stats),
+            'priorities': dict(priority_stats),
+            'resolution_rate': round((resolved / total_complaints * 100), 1) if total_complaints > 0 else 0
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Bulk Operations
+@app.route('/api/complaints/bulk-update', methods=['POST'])
+def bulk_update_complaints():
+    try:
+        data = request.json
+        complaint_ids = data.get('complaint_ids', [])
+        action = data.get('action')  # 'status', 'priority', 'assign'
+        value = data.get('value')
+        admin_id = data.get('admin_id')
+        
+        if not complaint_ids or not action or not value:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        complaints = Complaint.query.filter(Complaint.id.in_(complaint_ids)).all()
+        
+        if not complaints:
+            return jsonify({'error': 'No complaints found'}), 404
+        
+        updated_count = 0
+        for complaint in complaints:
+            if action == 'status':
+                complaint.status = value
+                if value == 'Resolved':
+                    complaint.resolved_at = datetime.utcnow()
+            elif action == 'priority':
+                complaint.priority = value
+            elif action == 'assign' and admin_id:
+                complaint.assigned_to = admin_id
+            
+            complaint.updated_at = datetime.utcnow()
+            updated_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Successfully updated {updated_count} complaints',
+            'updated_count': updated_count
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Notification System
+@app.route('/api/notifications/<int:user_id>', methods=['GET'])
+def get_notifications(user_id):
+    try:
+        user = User.query.get_or_404(user_id)
+        notifications = []
+        
+        if user.role == 'student':
+            # Get student's complaint updates
+            recent_updates = Complaint.query.filter_by(student_id=user_id).filter(
+                Complaint.updated_at > datetime.utcnow() - timedelta(days=7)
+            ).order_by(Complaint.updated_at.desc()).limit(10).all()
+            
+            for complaint in recent_updates:
+                notifications.append({
+                    'id': f'complaint_{complaint.id}',
+                    'type': 'complaint_update',
+                    'title': f'Complaint {complaint.complaint_id} Updated',
+                    'message': f'Status changed to {complaint.status}',
+                    'timestamp': complaint.updated_at.isoformat(),
+                    'read': False
+                })
+        
+        elif user.role == 'admin':
+            # Get new complaints for admin
+            new_complaints = Complaint.query.filter_by(status='Pending').filter(
+                Complaint.created_at > datetime.utcnow() - timedelta(days=1)
+            ).order_by(Complaint.created_at.desc()).limit(10).all()
+            
+            for complaint in new_complaints:
+                notifications.append({
+                    'id': f'new_complaint_{complaint.id}',
+                    'type': 'new_complaint',
+                    'title': 'New Complaint Received',
+                    'message': f'{complaint.title} - {complaint.student.name}',
+                    'timestamp': complaint.created_at.isoformat(),
+                    'read': False
+                })
+        
+        return jsonify({'notifications': notifications})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Health check
 @app.route('/api/health', methods=['GET'])
@@ -588,6 +936,44 @@ def health_check():
             'error': str(e),
             'timestamp': datetime.utcnow().isoformat()
         }), 500
+
+# Error Handlers
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Resource not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return jsonify({'error': 'Internal server error'}), 500
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({'error': 'Bad request'}), 400
+
+@app.errorhandler(403)
+def forbidden(error):
+    return jsonify({'error': 'Access forbidden'}), 403
+
+# Rate limiting (if flask-limiter is installed)
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    
+    limiter = Limiter(
+        key_func=get_remote_address,
+        app=app,
+        default_limits=["200 per day", "50 per hour"]
+    )
+    
+    # Apply rate limiting to sensitive endpoints
+    @app.route('/api/register', methods=['POST'])
+    @limiter.limit("5 per minute")
+    def register_limited():
+        return register()
+        
+except ImportError:
+    print("⚠️ Flask-Limiter not installed. Rate limiting disabled.")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

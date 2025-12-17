@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-"""
-Startup script for the complaint system
-"""
 
 import subprocess
 import sys
