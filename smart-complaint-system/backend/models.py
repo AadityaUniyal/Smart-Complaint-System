@@ -72,6 +72,7 @@ class ComplaintCategory(db.Model):
     
     # Relationships
     complaints = db.relationship('Complaint', backref='complaint_category', lazy=True)
+    department = db.relationship('Department', backref='complaint_categories', lazy=True)
     
     def to_dict(self):
         return {
