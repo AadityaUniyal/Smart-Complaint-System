@@ -1,7 +1,7 @@
 import csv
 import os
 from datetime import datetime
-from models import db, Department, Course, ComplaintCategory, User
+from models import db, Department, Course, ComplaintCategory, User, Complaint
 from app import app
 
 def load_departments():
@@ -118,6 +118,91 @@ def load_students():
     db.session.commit()
     print("✅ Students loaded successfully!")
 
+def load_complaints():
+    """Load complaints from CSV file"""
+    csv_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'student_complaints.csv')
+    
+    if not os.path.exists(csv_path):
+        print("⚠️ student_complaints.csv not found, skipping complaint loading")
+        return
+    
+    with open(csv_path, 'r', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        loaded_count = 0
+        skipped_count = 0
+        
+        for row in reader:
+            # Skip empty rows
+            if not row.get('complaint_id') or not row.get('student_id'):
+                continue
+                
+            # Check if complaint already exists
+            existing = Complaint.query.filter_by(complaint_id=row['complaint_id']).first()
+            if existing:
+                skipped_count += 1
+                continue
+            
+            # Find student by student_id
+            student = User.query.filter_by(student_id=row['student_id']).first()
+            if not student:
+                print(f"⚠️ Student {row['student_id']} not found for complaint {row['complaint_id']}")
+                skipped_count += 1
+                continue
+            
+            # Find category by name
+            category = ComplaintCategory.query.filter_by(name=row['category']).first()
+            category_id = category.id if category else 1  # Default to first category
+            
+            # Find department by name
+            department = Department.query.filter_by(name=row['department']).first()
+            department_id = department.id if department else 1  # Default to first department
+            
+            # Parse dates
+            try:
+                created_at = datetime.strptime(row['created_at'], '%Y-%m-%d %H:%M:%S')
+            except:
+                created_at = datetime.utcnow()
+            
+            updated_at = None
+            if row.get('updated_at'):
+                try:
+                    updated_at = datetime.strptime(row['updated_at'], '%Y-%m-%d %H:%M:%S')
+                except:
+                    pass
+            
+            resolved_at = None
+            if row.get('resolved_at'):
+                try:
+                    resolved_at = datetime.strptime(row['resolved_at'], '%Y-%m-%d %H:%M:%S')
+                except:
+                    pass
+            
+            # Create complaint
+            complaint = Complaint(
+                complaint_id=row['complaint_id'],
+                title=row['title'],
+                description=row['description'],
+                category_id=category_id,
+                department_id=department_id,
+                student_id=student.id,  # Use database ID, not student_id
+                status=row.get('status', 'Pending'),
+                priority=row.get('priority', 'Medium'),
+                urgency_level=int(row.get('urgency_level', 3)),
+                created_at=created_at,
+                updated_at=updated_at,
+                resolved_at=resolved_at
+            )
+            
+            db.session.add(complaint)
+            loaded_count += 1
+    
+    try:
+        db.session.commit()
+        print(f"✅ Complaints loaded successfully! ({loaded_count} loaded, {skipped_count} skipped)")
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error loading complaints: {e}")
+
 def load_all_data():
     """Load all data from CSV files"""
     with app.app_context():
@@ -144,6 +229,7 @@ def load_all_data():
             load_courses()
             load_complaint_categories()
             load_students()
+            load_complaints()  # Load complaints after students and categories
             
             print("🎉 All data loaded successfully!")
             
