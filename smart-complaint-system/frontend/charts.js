@@ -1,7 +1,3 @@
-/**
- * Simple Chart Library for Smart Complaint System
- */
-
 class SimpleCharts {
     static createBarChart(container, data, options = {}) {
         const { width = 400, height = 300, colors = ['#e50914', '#ff6b6b', '#00a8e1'] } = options;
