@@ -132,15 +132,27 @@ def save_complaint_to_csv(complaint, student_name):
     try:
         csv_path = os.path.join(os.path.dirname(__file__), '../data/student_complaints.csv')
         
+        # Get student info more reliably
+        student = User.query.get(complaint.student_id) if complaint.student_id else None
+        student_id_str = student.student_id if student else ''
+        
+        # Get category and department info more reliably
+        category = ComplaintCategory.query.get(complaint.category_id) if complaint.category_id else None
+        department = Department.query.get(complaint.department_id) if complaint.department_id else None
+        
+        # Debug the queries
+        print(f"   Category ID: {complaint.category_id}, Found: {category.name if category else 'None'}")
+        print(f"   Department ID: {complaint.department_id}, Found: {department.name if department else 'None'}")
+        
         # Complaint data for CSV
         complaint_data = {
             'complaint_id': complaint.complaint_id,
-            'student_id': complaint.student.student_id if complaint.student else '',
+            'student_id': student_id_str,
             'student_name': student_name,
             'title': complaint.title,
             'description': complaint.description,
-            'category': complaint.category.name if complaint.category else '',
-            'department': complaint.department.name if complaint.department else '',
+            'category': category.name if category else '',
+            'department': department.name if department else '',
             'status': complaint.status,
             'priority': complaint.priority,
             'urgency_level': complaint.urgency_level,
@@ -150,8 +162,25 @@ def save_complaint_to_csv(complaint, student_name):
             'admin_comments': ''
         }
         
+        print(f"🔍 Debug - Saving complaint to CSV:")
+        print(f"   Complaint ID: {complaint.complaint_id}")
+        print(f"   Student ID: {student_id_str}")
+        print(f"   Student Name: {student_name}")
+        print(f"   Category: {category.name if category else 'None'}")
+        print(f"   Department: {department.name if department else 'None'}")
+        
         # Check if file exists and has data
         file_exists = os.path.exists(csv_path)
+        print(f"   CSV file exists: {file_exists}")
+        print(f"   CSV path: {csv_path}")
+        
+        # Ensure file ends with newline if it exists and has content
+        if file_exists and os.path.getsize(csv_path) > 0:
+            with open(csv_path, 'r+', encoding='utf-8') as f:
+                f.seek(0, 2)  # Go to end of file
+                f.seek(f.tell() - 1)  # Go back one character
+                if f.read(1) != '\n':
+                    f.write('\n')
         
         with open(csv_path, 'a', newline='', encoding='utf-8') as csvfile:
             fieldnames = list(complaint_data.keys())
@@ -159,14 +188,19 @@ def save_complaint_to_csv(complaint, student_name):
             
             # Write header if file is new or empty
             if not file_exists or os.path.getsize(csv_path) == 0:
+                print(f"   Writing CSV header...")
                 writer.writeheader()
             
+            print(f"   Writing complaint data to CSV...")
             writer.writerow(complaint_data)
+            print(f"   Data written successfully")
         
         print(f"✅ Complaint {complaint.complaint_id} saved to CSV")
         
     except Exception as e:
         print(f"❌ Error saving complaint to CSV: {e}")
+        import traceback
+        traceback.print_exc()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -578,6 +612,15 @@ def get_complaint_categories():
         return jsonify({'error': 'Failed to fetch complaint categories', 'details': str(e)}), 500
 
 # Student endpoints
+@app.route('/api/students', methods=['GET'])
+def get_all_students():
+    """Get all students for admin dashboard"""
+    try:
+        students = User.query.filter_by(role='student').all()
+        return jsonify([student.to_dict() for student in students])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/student/<student_id>', methods=['GET'])
 def get_student_info(student_id):
     student = User.find_by_student_id(student_id)
@@ -683,7 +726,7 @@ def search_complaints():
 def export_complaints():
     try:
         # Get all complaints with student info
-        complaints = db.session.query(Complaint, User).join(User).all()
+        complaints = db.session.query(Complaint, User).join(User, Complaint.student_id == User.id).all()
         
         # Prepare CSV data
         csv_data = []
