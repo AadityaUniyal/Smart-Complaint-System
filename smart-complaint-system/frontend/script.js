@@ -1630,6 +1630,11 @@ function loadComplaintForm(categoryType = 'Academic') {
             </div>
             
             <form id="complaint-form" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Hidden fields for required data -->
+                <input type="hidden" name="user_id" value="${currentUser ? currentUser.id : ''}">
+                <input type="hidden" name="category_id" id="selected-category-id" value="">
+                <input type="hidden" name="department_id" id="selected-department-id" value="">
+                
                 <div class="form-group">
                     <label class="form-label">Complaint Title *</label>
                     <input type="text" class="form-input" name="title" 
@@ -1646,6 +1651,22 @@ function loadComplaintForm(categoryType = 'Academic') {
                               required minlength="20" maxlength="1000"
                               style="min-height: 150px;"
                               oninput="validateField(this)" onblur="validateField(this)"></textarea>
+                    <div class="field-feedback"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <select class="form-select" id="category-select" name="category_id" required onchange="updateCategorySelection(this)">
+                        <option value="">Select a category...</option>
+                    </select>
+                    <div class="field-feedback"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Department *</label>
+                    <select class="form-select" id="department-select" name="department_id" required onchange="updateDepartmentSelection(this)">
+                        <option value="">Select a department...</option>
+                    </select>
                     <div class="field-feedback"></div>
                 </div>
                 
@@ -1685,10 +1706,54 @@ function loadComplaintForm(categoryType = 'Academic') {
     const complaintForm = document.getElementById('complaint-form');
     complaintForm.addEventListener('submit', handleComplaintSubmission);
     
+    // Load categories and departments
+    loadCategoriesAndDepartments();
+    
     // Initialize auto-save for this form
     if (window.EnhancedFeatures && window.EnhancedFeatures.AutoSave) {
         complaintForm.autoSaveInstance = new window.EnhancedFeatures.AutoSave('#complaint-form');
     }
+}
+
+// Load categories and departments for complaint form
+async function loadCategoriesAndDepartments() {
+    try {
+        // Load categories
+        const categoriesResponse = await fetch(`${API_BASE}/complaint-categories`);
+        if (categoriesResponse.ok) {
+            const categories = await categoriesResponse.json();
+            const categorySelect = document.getElementById('category-select');
+            if (categorySelect) {
+                categorySelect.innerHTML = '<option value="">Select a category...</option>' +
+                    categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+            }
+        }
+        
+        // Load departments
+        const departmentsResponse = await fetch(`${API_BASE}/departments`);
+        if (departmentsResponse.ok) {
+            const departments = await departmentsResponse.json();
+            const departmentSelect = document.getElementById('department-select');
+            if (departmentSelect) {
+                departmentSelect.innerHTML = '<option value="">Select a department...</option>' +
+                    departments.map(dept => `<option value="${dept.id}">${dept.name}</option>`).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load categories and departments:', error);
+    }
+}
+
+// Update category selection
+function updateCategorySelection(select) {
+    const categoryId = select.value;
+    document.getElementById('selected-category-id').value = categoryId;
+}
+
+// Update department selection
+function updateDepartmentSelection(select) {
+    const departmentId = select.value;
+    document.getElementById('selected-department-id').value = departmentId;
     
     // Add real-time validation setup
     setupRealTimeValidation(complaintForm);
@@ -3531,6 +3596,8 @@ window.clearAllFilters = clearAllFilters;
 window.insertTemplate = insertTemplate;
 window.showLoadingModal = showLoadingModal;
 window.hideLoadingModal = hideLoadingModal;
+window.updateCategorySelection = updateCategorySelection;
+window.updateDepartmentSelection = updateDepartmentSelection;
 window.refreshAdminComplaints = refreshAdminComplaints;
 window.updateComplaintStatus = updateComplaintStatus;
 window.updateComplaintPriority = updateComplaintPriority;
