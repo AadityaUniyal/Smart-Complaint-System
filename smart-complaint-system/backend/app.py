@@ -4,6 +4,9 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from flask_bcrypt import Bcrypt
 from models import db, User, Complaint, Comment, Department, Course, ComplaintCategory
 from config import Config
+from security import security_manager, validate_request, rate_limit, security_headers, VALIDATION_RULES
+from performance import perf_monitor, monitor_performance, cached_query
+from error_handler import ErrorHandler, handle_database_errors, validate_json_request
 
 import os
 from datetime import datetime, timedelta
@@ -27,6 +30,10 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# Initialize error handling and security
+error_handler = ErrorHandler(app)
+app.after_request(security_headers)
 
 # Database connection retry
 def retry_db_operation(max_retries=3, delay=1):
@@ -262,6 +269,11 @@ load_initial_data()
 
 # Login/Register endpoints
 @app.route('/api/register', methods=['POST'])
+@validate_json_request
+@validate_request(VALIDATION_RULES['student_registration'])
+@rate_limit(max_attempts=3, window_minutes=10)
+@monitor_performance
+@handle_database_errors
 def register():
     try:
         data = request.json
@@ -356,6 +368,9 @@ def register():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/login', methods=['POST'])
+@validate_json_request
+@rate_limit(max_attempts=5, window_minutes=15)
+@monitor_performance
 def login():
     data = request.json
     login_type = data.get('login_type', 'student')  # 'student' or 'admin'
@@ -415,6 +430,10 @@ def get_current_user():
 
 # Complaint endpoints
 @app.route('/api/complaints', methods=['POST'])
+@validate_json_request
+@validate_request(VALIDATION_RULES['complaint_submission'])
+@monitor_performance
+@handle_database_errors
 def create_complaint():
     data = request.json
     title = data.get('title')
@@ -918,16 +937,21 @@ def get_notifications(user_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Health check
+# Health check and monitoring
 @app.route('/api/health', methods=['GET'])
 def health_check():
     try:
         # Check database
         db.session.execute(db.text('SELECT 1'))
+        
+        # Get performance stats
+        perf_stats = perf_monitor.get_performance_stats()
+        
         return jsonify({
             'status': 'healthy',
             'database': 'connected',
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.utcnow().isoformat(),
+            'performance': perf_stats
         }), 200
     except Exception as e:
         return jsonify({
@@ -936,6 +960,19 @@ def health_check():
             'error': str(e),
             'timestamp': datetime.utcnow().isoformat()
         }), 500
+
+@app.route('/api/admin/performance', methods=['GET'])
+@monitor_performance
+def get_performance_metrics():
+    """Get detailed performance metrics for admin dashboard"""
+    try:
+        stats = perf_monitor.get_performance_stats()
+        return jsonify({
+            'performance_metrics': stats,
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Error Handlers
 @app.errorhandler(404)
