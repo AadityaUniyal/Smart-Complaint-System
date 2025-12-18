@@ -1633,6 +1633,17 @@ function loadComplaintForm(categoryType = 'Academic') {
                 </p>
             </div>
             
+            <!-- Progress Indicator -->
+            <div style="margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="font-size: 0.9rem; color: #b3b3b3;">Form Progress</span>
+                    <span id="progress-text" style="font-size: 0.9rem; color: #00a8e1;">0% Complete</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                    <div id="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00a8e1 0%, #0066cc 100%); transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+
             <form id="complaint-form" style="display: flex; flex-direction: column; gap: 1.5rem;">
                 <!-- Hidden fields for required data -->
                 <input type="hidden" name="user_id" value="${currentUser ? currentUser.id : ''}">
@@ -1641,10 +1652,15 @@ function loadComplaintForm(categoryType = 'Academic') {
                 
                 <div class="form-group">
                     <label class="form-label">Complaint Title *</label>
+                    <div style="margin-bottom: 0.5rem;">
+                        <button type="button" class="btn btn-secondary" onclick="showQuickTemplates()" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+                            <i class="fas fa-magic"></i> Quick Templates
+                        </button>
+                    </div>
                     <input type="text" class="form-input" name="title" 
                            placeholder="Brief title describing your ${categoryType.toLowerCase()} issue" 
                            required minlength="10" maxlength="100"
-                           oninput="validateField(this); updateCharCount(this, 'title-count')" onblur="validateField(this)">
+                           oninput="validateFieldWithProgress(this); updateCharCount(this, 'title-count')" onblur="validateFieldWithProgress(this)">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="field-feedback"></div>
                         <small id="title-count" style="color: #666; font-size: 0.8rem;">0/100</small>
@@ -1657,7 +1673,7 @@ function loadComplaintForm(categoryType = 'Academic') {
                               placeholder="Please describe your ${categoryType.toLowerCase()} issue in detail. Include relevant dates, locations, and any other important information..." 
                               required minlength="20" maxlength="1000"
                               style="min-height: 150px;"
-                              oninput="validateField(this); updateCharCount(this, 'desc-count')" onblur="validateField(this)"></textarea>
+                              oninput="validateFieldWithProgress(this); updateCharCount(this, 'desc-count')" onblur="validateFieldWithProgress(this)"></textarea>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="field-feedback"></div>
                         <small id="desc-count" style="color: #666; font-size: 0.8rem;">0/1000</small>
@@ -1666,15 +1682,18 @@ function loadComplaintForm(categoryType = 'Academic') {
                 
                 <div class="form-group">
                     <label class="form-label">Category *</label>
-                    <select class="form-select" id="category-select" name="category_id" required onchange="updateCategorySelection(this)">
+                    <select class="form-select" id="category-select" name="category_id" required onchange="updateCategorySelection(this); showCategoryHelp(this); updateFormProgress()">
                         <option value="">Select a category...</option>
                     </select>
                     <div class="field-feedback"></div>
+                    <div id="category-help" style="margin-top: 0.5rem; padding: 0.75rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3); display: none;">
+                        <small style="color: #3b82f6;"><i class="fas fa-info-circle"></i> <span id="category-description"></span></small>
+                    </div>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Department *</label>
-                    <select class="form-select" id="department-select" name="department_id" required onchange="updateDepartmentSelection(this)">
+                    <select class="form-select" id="department-select" name="department_id" required onchange="updateDepartmentSelection(this); updateFormProgress()">
                         <option value="">Select a department...</option>
                     </select>
                     <div class="field-feedback"></div>
@@ -1696,6 +1715,14 @@ function loadComplaintForm(categoryType = 'Academic') {
                     <textarea class="form-textarea" name="additional_info" 
                               placeholder="Any additional details, previous attempts to resolve, or relevant context..." 
                               style="min-height: 80px;"></textarea>
+                </div>
+                
+                <!-- Smart Suggestions -->
+                <div id="smart-suggestions" style="display: none; background: rgba(251, 191, 36, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(251, 191, 36, 0.3);">
+                    <div style="color: #fbbf24; font-weight: 600; margin-bottom: 0.5rem;">
+                        <i class="fas fa-lightbulb"></i> Helpful Tips
+                    </div>
+                    <div id="suggestions-content" style="font-size: 0.9rem; color: #b3b3b3;"></div>
                 </div>
                 
                 <div style="display: flex; gap: 1rem; margin-top: 1rem;">
@@ -1973,6 +2000,28 @@ function previewComplaint() {
     });
 }
 
+// Get progress percentage based on status
+function getProgressPercentage(status) {
+    const progressMap = {
+        'Pending': 25,
+        'In Progress': 60,
+        'Resolved': 100,
+        'Rejected': 100
+    };
+    return progressMap[status] || 0;
+}
+
+// Get progress bar color based on status
+function getProgressColor(status) {
+    const colorMap = {
+        'Pending': 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)',
+        'In Progress': 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)',
+        'Resolved': 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)',
+        'Rejected': 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
+    };
+    return colorMap[status] || '#666';
+}
+
 // Success modal after complaint submission
 function showSuccessModal(complaintData) {
     const modal = document.createElement('div');
@@ -2027,6 +2076,146 @@ function showSuccessModal(complaintData) {
         const form = document.getElementById('complaint-form');
         if (form) form.reset();
     };
+}
+
+// Show category help and suggestions
+function showCategoryHelp(select) {
+    const categoryHelp = document.getElementById('category-help');
+    const categoryDescription = document.getElementById('category-description');
+    const suggestions = document.getElementById('smart-suggestions');
+    const suggestionsContent = document.getElementById('suggestions-content');
+    
+    if (!categoryHelp || !categoryDescription) return;
+    
+    const categoryDescriptions = {
+        '1': 'Issues related to courses, teaching quality, assignments, attendance, and academic processes.',
+        '6': 'Problems with computer equipment, software, or lab facilities not working properly.',
+        '11': 'Room allocation, maintenance, cleanliness, and other hostel-related concerns.',
+        '16': 'Food quality, variety, timing, and mess-related issues.',
+        '21': 'Book availability, library timing, and study resources.',
+        '26': 'Exam scheduling, hall conditions, and examination-related problems.'
+    };
+    
+    const categoryTips = {
+        '1': [
+            'Include specific course name and faculty details',
+            'Mention dates and times when possible',
+            'Describe how it affects your learning'
+        ],
+        '6': [
+            'Specify exact location (lab, seat number)',
+            'Describe the error message or problem',
+            'Mention if you tried basic troubleshooting'
+        ],
+        '11': [
+            'Include your room number',
+            'Specify the exact problem area',
+            'Mention if it affects daily activities'
+        ],
+        '16': [
+            'Mention specific meal times',
+            'Describe the food quality issue',
+            'Include any health concerns'
+        ],
+        '21': [
+            'Specify book titles or resources needed',
+            'Mention your course and semester',
+            'Include alternative solutions tried'
+        ],
+        '26': [
+            'Include exam dates and subjects',
+            'Mention specific hall or timing conflicts',
+            'Describe the impact on your preparation'
+        ]
+    };
+    
+    const selectedValue = select.value;
+    
+    if (selectedValue && categoryDescriptions[selectedValue]) {
+        categoryDescription.textContent = categoryDescriptions[selectedValue];
+        categoryHelp.style.display = 'block';
+        
+        // Show smart suggestions
+        if (suggestions && suggestionsContent && categoryTips[selectedValue]) {
+            const tips = categoryTips[selectedValue];
+            suggestionsContent.innerHTML = tips.map(tip => 
+                `<div style="margin-bottom: 0.3rem;"><i class="fas fa-check" style="color: #fbbf24; margin-right: 0.5rem;"></i>${tip}</div>`
+            ).join('');
+            suggestions.style.display = 'block';
+        }
+    } else {
+        categoryHelp.style.display = 'none';
+        if (suggestions) suggestions.style.display = 'none';
+    }
+    
+    updateFormProgress();
+}
+
+// Update form progress
+function updateFormProgress() {
+    const form = document.getElementById('complaint-form');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    
+    if (!form || !progressBar || !progressText) return;
+    
+    const requiredFields = form.querySelectorAll('[required]');
+    let filledFields = 0;
+    
+    requiredFields.forEach(field => {
+        if (field.value.trim()) filledFields++;
+    });
+    
+    const progress = Math.round((filledFields / requiredFields.length) * 100);
+    progressBar.style.width = `${progress}%`;
+    progressText.textContent = `${progress}% Complete`;
+    
+    // Change color based on progress
+    if (progress === 100) {
+        progressBar.style.background = 'linear-gradient(90deg, #4ade80 0%, #22c55e 100%)';
+        progressText.style.color = '#4ade80';
+    } else if (progress >= 50) {
+        progressBar.style.background = 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)';
+        progressText.style.color = '#fbbf24';
+    } else {
+        progressBar.style.background = 'linear-gradient(90deg, #00a8e1 0%, #0066cc 100%)';
+        progressText.style.color = '#00a8e1';
+    }
+}
+
+// Enhanced field validation with progress update
+function validateFieldWithProgress(field) {
+    validateField(field);
+    updateFormProgress();
+}
+
+// Complaint status tracker for students
+function addStatusTracker() {
+    const complaintsSection = document.getElementById('complaints-preview');
+    if (!complaintsSection) return;
+    
+    // Add status legend
+    const legend = document.createElement('div');
+    legend.style.cssText = `
+        background: rgba(255,255,255,0.05); 
+        padding: 1rem; 
+        border-radius: 8px; 
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255,255,255,0.1);
+    `;
+    legend.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 0.5rem; color: #b3b3b3;">
+            <i class="fas fa-info-circle"></i> Status Guide
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem;">
+            <span style="color: #fbbf24;"><i class="fas fa-clock"></i> Pending - Waiting for review</span>
+            <span style="color: #3b82f6;"><i class="fas fa-cogs"></i> In Progress - Being worked on</span>
+            <span style="color: #4ade80;"><i class="fas fa-check-circle"></i> Resolved - Issue fixed</span>
+            <span style="color: #ef4444;"><i class="fas fa-times-circle"></i> Rejected - Cannot be resolved</span>
+        </div>
+    `;
+    
+    complaintsSection.parentNode.insertBefore(legend, complaintsSection);
 }
 
 function getCategoryDescription(categoryType) {
@@ -2827,6 +3016,28 @@ function updateComplaintsDisplay() {
                         <span style="font-size: 0.8rem; color: #666;">
                             #${complaint.complaint_id}
                         </span>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span style="font-size: 0.8rem; color: #b3b3b3;">Progress</span>
+                            <span style="font-size: 0.8rem; color: #b3b3b3;">${getProgressPercentage(complaint.status)}%</span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; overflow: hidden;">
+                            <div style="
+                                background: ${getProgressColor(complaint.status)};
+                                height: 100%;
+                                width: ${getProgressPercentage(complaint.status)}%;
+                                border-radius: 3px;
+                                transition: width 0.3s ease;
+                            "></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 0.3rem; font-size: 0.7rem; color: #666;">
+                            <span>Submitted</span>
+                            <span>In Review</span>
+                            <span>Resolved</span>
+                        </div>
                     </div>
                     
                     <h3 style="margin-bottom: 0.5rem; font-size: 1rem;">${complaint.title}</h3>
@@ -4664,3 +4875,158 @@ function loadAllComplaints() {
             `;
         });
 }
+
+// Add student-level improvement functions to window object for global access
+window.showCategoryHelp = showCategoryHelp;
+window.updateFormProgress = updateFormProgress;
+window.validateFieldWithProgress = validateFieldWithProgress;
+window.addStatusTracker = addStatusTracker;
+
+// Additional utility functions for enhanced student experience
+window.showQuickTemplates = function() {
+    const templates = {
+        'Academic': [
+            'Course content is outdated and needs revision',
+            'Faculty member frequently absent from scheduled classes',
+            'Assignment instructions are unclear and confusing',
+            'Practical sessions are not properly organized'
+        ],
+        'Infrastructure': [
+            'Hostel room maintenance required urgently',
+            'Mess food quality has deteriorated significantly',
+            'Classroom projector not working properly',
+            'Washroom facilities need immediate attention'
+        ],
+        'Technology': [
+            'Computer lab equipment malfunctioning frequently',
+            'Internet connectivity issues in library',
+            'Software installation problems in lab',
+            'Printing services not available when needed'
+        ],
+        'Services': [
+            'Required books not available in library',
+            'Medical facility lacks essential medicines',
+            'Bus service timing needs adjustment',
+            'Library timing should be extended'
+        ]
+    };
+    
+    const categoryType = selectedComplaintCategory || 'Academic';
+    const categoryTemplates = templates[categoryType] || templates['Academic'];
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); z-index: 10000;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(10px);
+    `;
+    
+    modal.innerHTML = `
+        <div style="max-width: 500px; background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,20,20,0.95) 100%); padding: 2rem; border-radius: 20px; border: 1px solid rgba(139, 92, 246, 0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: #8b5cf6; margin: 0;">
+                    <i class="fas fa-magic"></i> Quick Templates - ${categoryType}
+                </h3>
+                <button onclick="closeTemplates()" style="background: none; border: none; color: #666; font-size: 1.5rem; cursor: pointer;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <p style="color: #b3b3b3; font-size: 0.9rem; margin-bottom: 1rem;">Click on any template to use it as your complaint title:</p>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    ${categoryTemplates.map(template => `
+                        <button onclick="useTemplate('${template.replace(/'/g, "\\'")}'); closeTemplates();" 
+                                style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); color: #e5e7eb; padding: 0.75rem; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.3s ease;"
+                                onmouseover="this.style.background='rgba(139, 92, 246, 0.2)'"
+                                onmouseout="this.style.background='rgba(139, 92, 246, 0.1)'">
+                            ${template}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <button onclick="closeTemplates()" class="btn btn-secondary" style="width: 100%;">
+                Close
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    window.closeTemplates = () => {
+        document.body.removeChild(modal);
+        delete window.closeTemplates;
+        delete window.useTemplate;
+    };
+    
+    window.useTemplate = (template) => {
+        const titleField = document.querySelector('input[name="title"]');
+        if (titleField) {
+            titleField.value = template;
+            titleField.focus();
+            // Trigger validation
+            validateFieldWithProgress(titleField);
+            updateCharCount(titleField, 'title-count');
+        }
+    };
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) window.closeTemplates();
+    });
+};
+
+// Enhanced auto-refresh with visual feedback (variables already declared above)
+
+function startAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    // Refresh every 30 seconds
+    autoRefreshInterval = setInterval(() => {
+        if (currentUser && currentUser.id) {
+            loadUserComplaints();
+        }
+    }, 30000);
+}
+
+function updateLastUpdatedTime() {
+    const lastUpdatedElement = document.getElementById('last-updated');
+    if (lastUpdatedElement) {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        lastUpdatedElement.innerHTML = `<i class="fas fa-check-circle"></i> Updated at ${timeString}`;
+        lastUpdatedElement.style.color = '#4ade80';
+        
+        // Fade back to normal after 3 seconds
+        setTimeout(() => {
+            lastUpdatedElement.innerHTML = '<i class="fas fa-wifi"></i> Live Data';
+            lastUpdatedElement.style.color = '#4ade80';
+        }, 3000);
+    }
+}
+
+function refreshDashboard() {
+    const refreshBtn = document.querySelector('button[onclick="refreshDashboard()"]');
+    if (refreshBtn) {
+        const originalContent = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+        refreshBtn.disabled = true;
+        
+        // Refresh data
+        loadUserComplaints();
+        loadEnhancedStats();
+        
+        setTimeout(() => {
+            refreshBtn.innerHTML = originalContent;
+            refreshBtn.disabled = false;
+            showToast('Dashboard refreshed successfully!', 'success');
+        }, 2000);
+    }
+}
+
+console.log('✅ Student-level improvements loaded successfully!');
+console.log('📋 Features available: Character counters, Auto-save drafts, Form progress, Quick templates, Status tracker');
+console.log('🔄 Auto-refresh enabled for real-time updates');
