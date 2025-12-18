@@ -548,7 +548,11 @@ async function submitComplaint(complaintData) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Complaint submitted successfully!', 'success');
+            // Clear draft after successful submission
+            localStorage.removeItem('complaint_draft');
+            
+            // Show detailed success message
+            showSuccessModal(data);
             loadUserComplaints();
             return data;
         } else {
@@ -1640,8 +1644,11 @@ function loadComplaintForm(categoryType = 'Academic') {
                     <input type="text" class="form-input" name="title" 
                            placeholder="Brief title describing your ${categoryType.toLowerCase()} issue" 
                            required minlength="10" maxlength="100"
-                           oninput="validateField(this)" onblur="validateField(this)">
-                    <div class="field-feedback"></div>
+                           oninput="validateField(this); updateCharCount(this, 'title-count')" onblur="validateField(this)">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="field-feedback"></div>
+                        <small id="title-count" style="color: #666; font-size: 0.8rem;">0/100</small>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -1650,8 +1657,11 @@ function loadComplaintForm(categoryType = 'Academic') {
                               placeholder="Please describe your ${categoryType.toLowerCase()} issue in detail. Include relevant dates, locations, and any other important information..." 
                               required minlength="20" maxlength="1000"
                               style="min-height: 150px;"
-                              oninput="validateField(this)" onblur="validateField(this)"></textarea>
-                    <div class="field-feedback"></div>
+                              oninput="validateField(this); updateCharCount(this, 'desc-count')" onblur="validateField(this)"></textarea>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="field-feedback"></div>
+                        <small id="desc-count" style="color: #666; font-size: 0.8rem;">0/1000</small>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -1693,6 +1703,10 @@ function loadComplaintForm(categoryType = 'Academic') {
                         <i class="fas fa-eraser"></i>
                         Clear Form
                     </button>
+                    <button type="button" class="btn btn-prime" onclick="previewComplaint()" style="flex: 1;">
+                        <i class="fas fa-eye"></i>
+                        Preview
+                    </button>
                     <button type="submit" class="btn btn-netflix" style="flex: 2;">
                         <i class="fas fa-paper-plane"></i>
                         Submit ${categoryType} Complaint
@@ -1708,6 +1722,12 @@ function loadComplaintForm(categoryType = 'Academic') {
     
     // Load categories and departments
     loadCategoriesAndDepartments();
+    
+    // Load any saved draft
+    setTimeout(() => loadDraft(), 500);
+    
+    // Set up auto-save (every 30 seconds)
+    setInterval(saveDraft, 30000);
     
     // Initialize auto-save for this form
     if (window.EnhancedFeatures && window.EnhancedFeatures.AutoSave) {
@@ -1757,6 +1777,256 @@ function updateDepartmentSelection(select) {
     
     // Add real-time validation setup
     setupRealTimeValidation(complaintForm);
+}
+
+// Character count for form fields
+function updateCharCount(input, counterId) {
+    const counter = document.getElementById(counterId);
+    if (counter) {
+        const current = input.value.length;
+        const max = input.getAttribute('maxlength') || 1000;
+        counter.textContent = `${current}/${max}`;
+        
+        // Change color based on usage
+        if (current > max * 0.9) {
+            counter.style.color = '#ef4444'; // Red when near limit
+        } else if (current > max * 0.7) {
+            counter.style.color = '#fbbf24'; // Yellow when getting close
+        } else {
+            counter.style.color = '#666'; // Gray normally
+        }
+    }
+}
+
+// Auto-save draft functionality
+function saveDraft() {
+    const form = document.getElementById('complaint-form');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const draft = {};
+    for (let [key, value] of formData.entries()) {
+        if (value.trim()) draft[key] = value;
+    }
+    
+    if (Object.keys(draft).length > 0) {
+        localStorage.setItem('complaint_draft', JSON.stringify(draft));
+        showToast('Draft saved automatically', 'info', 2000);
+    }
+}
+
+// Load draft functionality
+function loadDraft() {
+    const draft = localStorage.getItem('complaint_draft');
+    if (!draft) return;
+    
+    try {
+        const draftData = JSON.parse(draft);
+        const form = document.getElementById('complaint-form');
+        if (!form) return;
+        
+        Object.keys(draftData).forEach(key => {
+            const field = form.querySelector(`[name="${key}"]`);
+            if (field) {
+                field.value = draftData[key];
+                // Update character counts
+                if (key === 'title') updateCharCount(field, 'title-count');
+                if (key === 'description') updateCharCount(field, 'desc-count');
+            }
+        });
+        
+        // Show notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white; padding: 1rem 1.5rem; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-save"></i>
+                <span>Draft restored! Continue where you left off.</span>
+                <button onclick="clearDraft()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.25rem 0.5rem; border-radius: 6px; margin-left: 1rem; cursor: pointer;">
+                    Clear
+                </button>
+            </div>
+        `;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                notification.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }
+        }, 5000);
+        
+    } catch (error) {
+        console.error('Error loading draft:', error);
+    }
+}
+
+// Clear draft
+function clearDraft() {
+    localStorage.removeItem('complaint_draft');
+    showToast('Draft cleared', 'success');
+}
+
+// Preview complaint before submission
+function previewComplaint() {
+    const form = document.getElementById('complaint-form');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    if (!data.title || !data.description) {
+        showToast('Please fill in title and description to preview', 'warning');
+        return;
+    }
+    
+    // Get category and department names
+    const categorySelect = document.getElementById('category-select');
+    const departmentSelect = document.getElementById('department-select');
+    const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text || 'Not selected';
+    const departmentName = departmentSelect.options[departmentSelect.selectedIndex]?.text || 'Not selected';
+    
+    const urgencyLabels = {
+        '1': '1 - Low',
+        '2': '2 - Medium', 
+        '3': '3 - High',
+        '4': '4 - Very High',
+        '5': '5 - Critical'
+    };
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); z-index: 10000;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(10px);
+    `;
+    
+    modal.innerHTML = `
+        <div style="max-width: 600px; background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,20,20,0.95) 100%); padding: 2rem; border-radius: 20px; border: 1px solid rgba(0, 168, 225, 0.3); max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="color: #00a8e1; margin: 0;">
+                    <i class="fas fa-eye"></i> Complaint Preview
+                </h2>
+                <button onclick="closePreview()" style="background: none; border: none; color: #666; font-size: 1.5rem; cursor: pointer;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div style="background: rgba(0, 168, 225, 0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid rgba(0, 168, 225, 0.3);">
+                <h3 style="color: #00a8e1; margin-bottom: 1rem;">📋 ${data.title}</h3>
+                <p style="color: #b3b3b3; line-height: 1.6; margin-bottom: 1rem;">${data.description}</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.9rem;">
+                    <div>
+                        <span style="color: #666;">Category:</span>
+                        <span style="color: #fff; margin-left: 0.5rem;">${categoryName}</span>
+                    </div>
+                    <div>
+                        <span style="color: #666;">Department:</span>
+                        <span style="color: #fff; margin-left: 0.5rem;">${departmentName}</span>
+                    </div>
+                    <div>
+                        <span style="color: #666;">Urgency:</span>
+                        <span style="color: #fff; margin-left: 0.5rem;">${urgencyLabels[data.urgency_level] || data.urgency_level}</span>
+                    </div>
+                    <div>
+                        <span style="color: #666;">Student:</span>
+                        <span style="color: #fff; margin-left: 0.5rem;">${currentUser ? currentUser.name : 'Current User'}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background: rgba(139, 92, 246, 0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid rgba(139, 92, 246, 0.3);">
+                <p style="color: #8b5cf6; font-size: 0.9rem; margin: 0;">
+                    <i class="fas fa-info-circle"></i>
+                    This is how your complaint will appear to administrators. Review the details and click "Submit" if everything looks correct.
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="closePreview()" class="btn btn-secondary" style="flex: 1;">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button onclick="closePreview(); document.getElementById('complaint-form').dispatchEvent(new Event('submit'))" class="btn btn-netflix" style="flex: 2;">
+                    <i class="fas fa-paper-plane"></i> Submit Complaint
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    window.closePreview = () => {
+        document.body.removeChild(modal);
+        delete window.closePreview;
+    };
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) window.closePreview();
+    });
+}
+
+// Success modal after complaint submission
+function showSuccessModal(complaintData) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); z-index: 10000;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(10px);
+    `;
+    
+    modal.innerHTML = `
+        <div style="max-width: 500px; background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,20,20,0.95) 100%); padding: 2rem; border-radius: 20px; border: 1px solid rgba(74, 222, 128, 0.3); text-align: center;">
+            <div style="color: #4ade80; font-size: 4rem; margin-bottom: 1rem;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            
+            <h2 style="color: #4ade80; margin-bottom: 1rem;">Complaint Submitted Successfully!</h2>
+            
+            <div style="background: rgba(74, 222, 128, 0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid rgba(74, 222, 128, 0.3);">
+                <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">
+                    <strong>Complaint ID: ${complaintData.complaint_id}</strong>
+                </div>
+                <div style="color: #b3b3b3; font-size: 0.9rem;">
+                    Status: ${complaintData.status} | Priority: ${complaintData.priority}
+                </div>
+            </div>
+            
+            <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid rgba(59, 130, 246, 0.3);">
+                <p style="color: #3b82f6; font-size: 0.9rem; margin: 0;">
+                    <i class="fas fa-info-circle"></i>
+                    Your complaint has been recorded and assigned to the appropriate department. You will receive updates as your complaint is processed.
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="closeSuccessModal()" class="btn btn-secondary" style="flex: 1;">
+                    <i class="fas fa-plus"></i> Submit Another
+                </button>
+                <button onclick="closeSuccessModal(); showSection('my-complaints')" class="btn btn-netflix" style="flex: 2;">
+                    <i class="fas fa-list"></i> View My Complaints
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    window.closeSuccessModal = () => {
+        document.body.removeChild(modal);
+        delete window.closeSuccessModal;
+        // Clear the form for new complaint
+        const form = document.getElementById('complaint-form');
+        if (form) form.reset();
+    };
 }
 
 function getCategoryDescription(categoryType) {
@@ -3598,6 +3868,12 @@ window.showLoadingModal = showLoadingModal;
 window.hideLoadingModal = hideLoadingModal;
 window.updateCategorySelection = updateCategorySelection;
 window.updateDepartmentSelection = updateDepartmentSelection;
+window.updateCharCount = updateCharCount;
+window.saveDraft = saveDraft;
+window.loadDraft = loadDraft;
+window.clearDraft = clearDraft;
+window.previewComplaint = previewComplaint;
+window.showSuccessModal = showSuccessModal;
 window.refreshAdminComplaints = refreshAdminComplaints;
 window.updateComplaintStatus = updateComplaintStatus;
 window.updateComplaintPriority = updateComplaintPriority;
