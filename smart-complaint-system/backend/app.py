@@ -1013,4 +1013,6 @@ except ImportError:
     print("⚠️ Flask-Limiter not installed. Rate limiting disabled.")
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # Set debug mode from environment variable FLASK_DEBUG; defaults to False for safety
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() in ['1', 'true', 'yes']
+    app.run(debug=debug_mode, port=5000)
