@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Complaint System</title>
+    <link rel="stylesheet" href="netflix-dashboard.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="enhanced-styles.css">
     <link rel="stylesheet" href="analytics-styles.css">
@@ -12,6 +13,7 @@
     <script src="advanced-analytics.js"></script>
     <script src="reporting-system.js"></script>
     <script src="realtime-analytics.js"></script>
+    <script src="enhanced-ui-features.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
 </head>
 <body>
@@ -279,16 +281,20 @@
             <div class="dashboard-sidebar">
                 <div class="sidebar-menu">
                     <button class="menu-item active" onclick="showDashboardView('overview')">
-                        📊 Overview
+                        <span class="menu-icon">📊</span>
+                        <span class="menu-text">Overview</span>
                     </button>
                     <button class="menu-item" onclick="showDashboardView('new-complaint')">
-                        ➕ New Complaint
+                        <span class="menu-icon">➕</span>
+                        <span class="menu-text">New Complaint</span>
                     </button>
                     <button class="menu-item" onclick="showDashboardView('my-complaints')">
-                        📋 My Complaints
+                        <span class="menu-icon">📋</span>
+                        <span class="menu-text">My Complaints</span>
                     </button>
                     <button class="menu-item" onclick="showDashboardView('profile')">
-                        👤 Profile
+                        <span class="menu-icon">👤</span>
+                        <span class="menu-text">Profile</span>
                     </button>
                 </div>
             </div>
@@ -297,8 +303,15 @@
                 <!-- Overview View -->
                 <div id="overview-view" class="dashboard-view active">
                     <div class="view-header">
-                        <h1>Welcome back! 👋</h1>
-                        <p>Here's what's happening with your complaints</p>
+                        <div class="view-title-section">
+                            <h1>Welcome back! 👋</h1>
+                            <p>Here's what's happening with your complaints</p>
+                        </div>
+                        <div class="view-actions">
+                            <button class="btn btn-secondary" onclick="refreshStudentData()" title="Refresh Data">
+                                🔄 Refresh
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="stats-grid">
@@ -386,62 +399,71 @@
 
                     <div class="form-container">
                         <form id="complaint-form" class="complaint-form">
-                            <div class="form-group">
-                                <label for="complaint-title">Complaint Title *</label>
-                                <input type="text" id="complaint-title" name="title" required 
-                                       placeholder="Brief description of your issue">
-                            </div>
+                            <div class="form-section">
+                                <h4>📝 Basic Information</h4>
+                                <div class="form-group">
+                                    <label for="complaint-title">Complaint Title *</label>
+                                    <input type="text" id="complaint-title" name="title" required 
+                                           placeholder="Brief description of your issue">
+                                </div>
 
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="complaint-department">Department *</label>
-                                    <select id="complaint-department" name="department_id" required>
-                                        <option value="">Select Department</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="complaint-category">Category *</label>
-                                    <select id="complaint-category" name="category_id" required>
-                                        <option value="">Select Category</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="complaint-priority">Priority</label>
-                                    <select id="complaint-priority" name="priority">
-                                        <option value="Low">Low</option>
-                                        <option value="Medium" selected>Medium</option>
-                                        <option value="High">High</option>
-                                        <option value="Critical">Critical</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="complaint-urgency">Urgency Level</label>
-                                    <select id="complaint-urgency" name="urgency_level">
-                                        <option value="1">1 - Can wait</option>
-                                        <option value="2">2 - Normal</option>
-                                        <option value="3" selected>3 - Important</option>
-                                        <option value="4">4 - Urgent</option>
-                                        <option value="5">5 - Critical</option>
-                                    </select>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="complaint-department">Department *</label>
+                                        <select id="complaint-department" name="department_id" required>
+                                            <option value="">Select Department</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="complaint-category">Category *</label>
+                                        <select id="complaint-category" name="category_id" required>
+                                            <option value="">Select Category</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="complaint-description">Detailed Description *</label>
-                                <textarea id="complaint-description" name="description" required 
-                                          placeholder="Please provide detailed information about your complaint..."
-                                          rows="6"></textarea>
+                            <div class="form-section">
+                                <h4>⚡ Priority & Urgency</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="complaint-priority">Priority Level</label>
+                                        <select id="complaint-priority" name="priority">
+                                            <option value="Low">🟢 Low - Minor issue</option>
+                                            <option value="Medium" selected>🟡 Medium - Standard issue</option>
+                                            <option value="High">🟠 High - Important issue</option>
+                                            <option value="Critical">🔴 Critical - Urgent attention needed</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="complaint-urgency">Urgency Level</label>
+                                        <select id="complaint-urgency" name="urgency_level">
+                                            <option value="1">1 - Can wait (1-2 weeks)</option>
+                                            <option value="2">2 - Normal (3-5 days)</option>
+                                            <option value="3" selected>3 - Important (1-2 days)</option>
+                                            <option value="4">4 - Urgent (Same day)</option>
+                                            <option value="5">5 - Critical (Immediate)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4>📄 Detailed Description</h4>
+                                <div class="form-group">
+                                    <label for="complaint-description">Describe your complaint in detail *</label>
+                                    <textarea id="complaint-description" name="description" required 
+                                              placeholder="Please provide detailed information about your complaint including:&#10;• What happened?&#10;• When did it occur?&#10;• Who was involved?&#10;• What outcome are you expecting?"
+                                              rows="6"></textarea>
+                                </div>
                             </div>
 
                             <div class="form-actions">
                                 <button type="button" class="btn btn-secondary" onclick="clearComplaintForm()">
-                                    Clear Form
+                                    🗑️ Clear Form
                                 </button>
                                 <button type="submit" class="btn btn-primary">
-                                    Submit Complaint
+                                    📤 Submit Complaint
                                 </button>
                             </div>
                         </form>
@@ -598,22 +620,28 @@
             <div class="dashboard-sidebar">
                 <div class="sidebar-menu">
                     <button class="menu-item active" onclick="showAdminView('dashboard')">
-                        📊 Dashboard
+                        <span class="menu-icon">📊</span>
+                        <span class="menu-text">Dashboard</span>
                     </button>
                     <button class="menu-item" onclick="showAdminView('complaints')">
-                        📋 All Complaints
+                        <span class="menu-icon">📋</span>
+                        <span class="menu-text">All Complaints</span>
                     </button>
                     <button class="menu-item" onclick="showAdminView('students')">
-                        👥 Students
+                        <span class="menu-icon">👥</span>
+                        <span class="menu-text">Students</span>
                     </button>
                     <button class="menu-item" onclick="showAdminView('departments')">
-                        🏢 Departments
+                        <span class="menu-icon">🏢</span>
+                        <span class="menu-text">Departments</span>
                     </button>
                     <button class="menu-item" onclick="showAdminView('analytics')">
-                        📈 Analytics
+                        <span class="menu-icon">📈</span>
+                        <span class="menu-text">Analytics</span>
                     </button>
                     <button class="menu-item" onclick="showAdminView('settings')">
-                        ⚙️ Settings
+                        <span class="menu-icon">⚙️</span>
+                        <span class="menu-text">Settings</span>
                     </button>
                 </div>
             </div>
@@ -622,8 +650,15 @@
                 <!-- Admin Dashboard View -->
                 <div id="admin-dashboard-view" class="dashboard-view active">
                     <div class="view-header">
-                        <h1>Admin Dashboard</h1>
-                        <p>Overview of all complaints and system statistics</p>
+                        <div class="view-title-section">
+                            <h1>Admin Dashboard</h1>
+                            <p>Overview of all complaints and system statistics</p>
+                        </div>
+                        <div class="view-actions">
+                            <button class="btn btn-secondary" onclick="refreshAdminData()" title="Refresh Data">
+                                🔄 Refresh
+                            </button>
+                        </div>
                     </div>
 
                     <div class="stats-grid">
@@ -1029,14 +1064,21 @@
     <!-- Toast Notifications -->
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- Debug Panel (temporary) -->
+    <div style="position: fixed; top: 10px; left: 10px; z-index: 10000; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px;">
+        <div>API Status: <span id="api-status">Testing...</span></div>
+        <div>Complaints: <span id="complaints-count">0</span></div>
+        <button onclick="testAPIConnection()" style="margin-top: 5px; padding: 5px 10px; cursor: pointer;">Test API</button>
+        <button onclick="forceLogin()" style="margin-top: 5px; padding: 5px 10px; cursor: pointer;">Force Admin Login</button>
+    </div>
+
     <!-- Floating Action Button -->
     <button class="btn-floating" onclick="showQuickActions()" title="Quick Actions">
         ⚡
     </button>
 
     <!-- Scripts -->
-    <script src="enhanced-features.js"></script>
-    <script src="advanced-components.js"></script>
+    <script src="components.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
