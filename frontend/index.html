@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Complaint System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="enhanced-styles.css">
+    <script src="charts.js"></script>
+    <script src="professional-features.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">🎓</div>
+            <h2>Smart Complaint System</h2>
+            <div class="loading-spinner"></div>
+            <p>Loading your dashboard...</p>
+        </div>
+    </div>
+
+    <!-- Landing Page -->
+    <div id="landing-page" class="page">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <span class="brand-icon">🎓</span>
+                    <span class="brand-text">SmartComplaint</span>
+                </div>
+                <div class="nav-menu">
+                    <a href="#features" class="nav-link">Features</a>
+                    <a href="#about" class="nav-link">About</a>
+                    <button class="btn btn-primary" onclick="showLoginModal()">Get Started</button>
+                </div>
+                <div class="nav-toggle" onclick="toggleMobileMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-container">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        Smart Complaint <span class="highlight">Management</span>
+                    </h1>
+                    <p class="hero-description">
+                        Streamline your college experience with our advanced complaint management system. 
+                        Submit, track, and resolve issues efficiently with complete transparency.
+                    </p>
+                    <div class="hero-buttons">
+                        <button class="btn btn-primary btn-large" onclick="showLoginModal()">
+                            Start Your Journey
+                        </button>
+                        <button class="btn btn-secondary btn-large" onclick="scrollToSection('features')">
+                            Learn More
+                        </button>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <div class="stat-number" id="total-students">1000+</div>
+                            <div class="stat-label">Students</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="total-departments">18</div>
+                            <div class="stat-label">Departments</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="resolution-rate">95%</div>
+                            <div class="stat-label">Resolved</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="dashboard-preview">
+                        <div class="preview-header">
+                            <div class="preview-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <span class="preview-title">Live Dashboard</span>
+                        </div>
+                        <div class="preview-content">
+                            <div class="preview-stats">
+                                <div class="preview-stat">
+                                    <span class="preview-number">247</span>
+                                    <span class="preview-label">Total</span>
+                                </div>
+                                <div class="preview-stat">
+                                    <span class="preview-number">89%</span>
+                                    <span class="preview-label">Resolved</span>
+                                </div>
+                            </div>
+                            <div class="preview-chart">
+                                <div class="chart-bar" style="height: 60%"></div>
+                                <div class="chart-bar" style="height: 80%"></div>
+                                <div class="chart-bar" style="height: 45%"></div>
+                                <div class="chart-bar" style="height: 90%"></div>
+                                <div class="chart-bar" style="height: 70%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">Why Choose SmartComplaint?</h2>
+                    <p class="section-description">
+                        Experience the future of complaint management with our comprehensive features
+                    </p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3 class="feature-title">Real-time Tracking</h3>
+                        <p class="feature-description">
+                            Monitor your complaint status in real-time with instant notifications and updates.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3 class="feature-title">Fast Resolution</h3>
+                        <p class="feature-description">
+                            Average resolution time of 2-3 days with automated routing to relevant departments.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💬</div>
+                        <h3 class="feature-title">Direct Communication</h3>
+                        <p class="feature-description">
+                            Chat directly with department heads and get personalized responses.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <h3 class="feature-title">Secure & Private</h3>
+                        <p class="feature-description">
+                            Your data is encrypted and protected with enterprise-grade security.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🏆</div>
+                        <h3 class="feature-title">Quality Assurance</h3>
+                        <p class="feature-description">
+                            Rate and review resolution quality to help us improve continuously.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">👥</div>
+                        <h3 class="feature-title">Community Driven</h3>
+                        <p class="feature-description">
+                            Join thousands of students making their college experience better.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="about">
+            <div class="container">
+                <div class="about-content">
+                    <div class="about-text">
+                        <h2>Transforming College Experience</h2>
+                        <p>
+                            SmartComplaint is designed to bridge the gap between students and administration, 
+                            creating a transparent and efficient system for addressing concerns and improving 
+                            the overall educational experience.
+                        </p>
+                        <div class="about-features">
+                            <div class="about-feature">
+                                <span class="about-icon">✅</span>
+                                <span>24/7 Complaint Submission</span>
+                            </div>
+                            <div class="about-feature">
+                                <span class="about-icon">✅</span>
+                                <span>Automated Department Routing</span>
+                            </div>
+                            <div class="about-feature">
+                                <span class="about-icon">✅</span>
+                                <span>Progress Tracking & Updates</span>
+                            </div>
+                            <div class="about-feature">
+                                <span class="about-icon">✅</span>
+                                <span>Admin Dashboard & Analytics</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="about-image">
+                        <div class="about-card">
+                            <h3>How It Works</h3>
+                            <div class="steps">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <span class="step-text">Submit Complaint</span>
+                                </div>
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <span class="step-text">Track Progress</span>
+                                </div>
+                                <div class="step">
+                                    <span class="step-number">3</span>
+                                    <span class="step-text">Get Resolution</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-brand">
+                        <span class="brand-icon">🎓</span>
+                        <span class="brand-text">SmartComplaint</span>
+                    </div>
+                    <p class="footer-text">
+                        © 2024 Smart Complaint System. Making education better, one complaint at a time.
+                    </p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Student Dashboard -->
+    <div id="student-dashboard" class="page dashboard hidden">
+        <div class="dashboard-header">
+            <div class="dashboard-nav">
+                <div class="nav-brand">
+                    <span class="brand-icon">🎓</span>
+                    <span class="brand-text">SmartComplaint</span>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn btn-icon" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
+                    <div class="user-menu">
+                        <button class="user-avatar" onclick="toggleUserMenu()">
+                            <span id="user-initials">ST</span>
+                        </button>
+                        <div class="user-dropdown" id="user-dropdown">
+                            <div class="user-info">
+                                <div class="user-name" id="user-name">Student Name</div>
+                                <div class="user-email" id="user-email">student@college.edu</div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item" onclick="showProfile()">
+                                👤 Profile
+                            </button>
+                            <button class="dropdown-item" onclick="showSettings()">
+                                ⚙️ Settings
+                            </button>
+                            <button class="dropdown-item" onclick="logout()">
+                                🚪 Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="dashboard-sidebar">
+                <div class="sidebar-menu">
+                    <button class="menu-item active" onclick="showDashboardView('overview')">
+                        📊 Overview
+                    </button>
+                    <button class="menu-item" onclick="showDashboardView('new-complaint')">
+                        ➕ New Complaint
+                    </button>
+                    <button class="menu-item" onclick="showDashboardView('my-complaints')">
+                        📋 My Complaints
+                    </button>
+                    <button class="menu-item" onclick="showDashboardView('profile')">
+                        👤 Profile
+                    </button>
+                </div>
+            </div>
+
+            <div class="dashboard-main">
+                <!-- Overview View -->
+                <div id="overview-view" class="dashboard-view active">
+                    <div class="view-header">
+                        <h1>Welcome back! 👋</h1>
+                        <p>Here's what's happening with your complaints</p>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="student-total-complaints">0</div>
+                                <div class="stat-label">Total Complaints</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⏳</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="student-pending-complaints">0</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🔄</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="student-progress-complaints">0</div>
+                                <div class="stat-label">In Progress</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="student-resolved-complaints">0</div>
+                                <div class="stat-label">Resolved</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Recent Complaints</h3>
+                                <button class="btn btn-small" onclick="showDashboardView('my-complaints')">
+                                    View All
+                                </button>
+                            </div>
+                            <div class="card-content">
+                                <div id="recent-complaints">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">📝</div>
+                                        <p>No complaints yet</p>
+                                        <button class="btn btn-primary" onclick="showDashboardView('new-complaint')">
+                                            Submit Your First Complaint
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Quick Actions</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="quick-actions">
+                                    <button class="quick-action" onclick="showDashboardView('new-complaint')">
+                                        <div class="action-icon">➕</div>
+                                        <div class="action-text">New Complaint</div>
+                                    </button>
+                                    <button class="quick-action" onclick="showDashboardView('my-complaints')">
+                                        <div class="action-icon">📋</div>
+                                        <div class="action-text">View Complaints</div>
+                                    </button>
+                                    <button class="quick-action" onclick="showDashboardView('profile')">
+                                        <div class="action-icon">👤</div>
+                                        <div class="action-text">Update Profile</div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Complaint View -->
+                <div id="new-complaint-view" class="dashboard-view">
+                    <div class="view-header">
+                        <h1>Submit New Complaint</h1>
+                        <p>Describe your issue and we'll route it to the right department</p>
+                    </div>
+
+                    <div class="form-container">
+                        <form id="complaint-form" class="complaint-form">
+                            <div class="form-group">
+                                <label for="complaint-title">Complaint Title *</label>
+                                <input type="text" id="complaint-title" name="title" required 
+                                       placeholder="Brief description of your issue">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="complaint-department">Department *</label>
+                                    <select id="complaint-department" name="department_id" required>
+                                        <option value="">Select Department</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="complaint-category">Category *</label>
+                                    <select id="complaint-category" name="category_id" required>
+                                        <option value="">Select Category</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="complaint-priority">Priority</label>
+                                    <select id="complaint-priority" name="priority">
+                                        <option value="Low">Low</option>
+                                        <option value="Medium" selected>Medium</option>
+                                        <option value="High">High</option>
+                                        <option value="Critical">Critical</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="complaint-urgency">Urgency Level</label>
+                                    <select id="complaint-urgency" name="urgency_level">
+                                        <option value="1">1 - Can wait</option>
+                                        <option value="2">2 - Normal</option>
+                                        <option value="3" selected>3 - Important</option>
+                                        <option value="4">4 - Urgent</option>
+                                        <option value="5">5 - Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="complaint-description">Detailed Description *</label>
+                                <textarea id="complaint-description" name="description" required 
+                                          placeholder="Please provide detailed information about your complaint..."
+                                          rows="6"></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" onclick="clearComplaintForm()">
+                                    Clear Form
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    Submit Complaint
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- My Complaints View -->
+                <div id="my-complaints-view" class="dashboard-view">
+                    <div class="view-header">
+                        <h1>My Complaints</h1>
+                        <p>Track the status of all your submitted complaints</p>
+                    </div>
+
+                    <div class="complaints-filters">
+                        <div class="filter-group">
+                            <select id="status-filter" onchange="filterComplaints()">
+                                <option value="">All Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Resolved">Resolved</option>
+                            </select>
+                            <select id="department-filter" onchange="filterComplaints()">
+                                <option value="">All Departments</option>
+                            </select>
+                            <input type="text" id="search-complaints" placeholder="Search complaints..." 
+                                   oninput="filterComplaints()">
+                        </div>
+                    </div>
+
+                    <div class="complaints-container">
+                        <div id="complaints-list">
+                            <div class="empty-state">
+                                <div class="empty-icon">📝</div>
+                                <p>No complaints found</p>
+                                <button class="btn btn-primary" onclick="showDashboardView('new-complaint')">
+                                    Submit Your First Complaint
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile View -->
+                <div id="profile-view" class="dashboard-view">
+                    <div class="view-header">
+                        <h1>Profile Settings</h1>
+                        <p>Manage your account information</p>
+                    </div>
+
+                    <div class="profile-container">
+                        <div class="profile-card">
+                            <div class="profile-header">
+                                <div class="profile-avatar">
+                                    <span id="profile-initials">ST</span>
+                                </div>
+                                <div class="profile-info">
+                                    <h3 id="profile-name">Student Name</h3>
+                                    <p id="profile-email">student@college.edu</p>
+                                    <span class="profile-badge">Student</span>
+                                </div>
+                            </div>
+
+                            <form id="profile-form" class="profile-form">
+                                <div class="form-group">
+                                    <label for="profile-full-name">Full Name</label>
+                                    <input type="text" id="profile-full-name" name="name" required>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="profile-phone">Phone Number</label>
+                                        <input type="tel" id="profile-phone" name="phone">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="profile-student-id">Student ID</label>
+                                        <input type="text" id="profile-student-id" name="student_id" readonly>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="profile-year">Year</label>
+                                        <select id="profile-year" name="year">
+                                            <option value="1">1st Year</option>
+                                            <option value="2">2nd Year</option>
+                                            <option value="3">3rd Year</option>
+                                            <option value="4">4th Year</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="profile-semester">Semester</label>
+                                        <select id="profile-semester" name="semester">
+                                            <option value="1">1st Semester</option>
+                                            <option value="2">2nd Semester</option>
+                                            <option value="3">3rd Semester</option>
+                                            <option value="4">4th Semester</option>
+                                            <option value="5">5th Semester</option>
+                                            <option value="6">6th Semester</option>
+                                            <option value="7">7th Semester</option>
+                                            <option value="8">8th Semester</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">
+                                        Update Profile
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="page dashboard hidden">
+        <div class="dashboard-header">
+            <div class="dashboard-nav">
+                <div class="nav-brand">
+                    <span class="brand-icon">🎓</span>
+                    <span class="brand-text">SmartComplaint Admin</span>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn btn-icon" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
+                    <div class="user-menu">
+                        <button class="user-avatar admin" onclick="toggleUserMenu()">
+                            <span id="admin-initials">AD</span>
+                        </button>
+                        <div class="user-dropdown" id="admin-dropdown">
+                            <div class="user-info">
+                                <div class="user-name" id="admin-name">Admin Name</div>
+                                <div class="user-email" id="admin-email">admin@college.edu</div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item" onclick="showAdminProfile()">
+                                👤 Profile
+                            </button>
+                            <button class="dropdown-item" onclick="showAdminSettings()">
+                                ⚙️ Settings
+                            </button>
+                            <button class="dropdown-item" onclick="logout()">
+                                🚪 Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="dashboard-sidebar">
+                <div class="sidebar-menu">
+                    <button class="menu-item active" onclick="showAdminView('dashboard')">
+                        📊 Dashboard
+                    </button>
+                    <button class="menu-item" onclick="showAdminView('complaints')">
+                        📋 All Complaints
+                    </button>
+                    <button class="menu-item" onclick="showAdminView('students')">
+                        👥 Students
+                    </button>
+                    <button class="menu-item" onclick="showAdminView('departments')">
+                        🏢 Departments
+                    </button>
+                    <button class="menu-item" onclick="showAdminView('analytics')">
+                        📈 Analytics
+                    </button>
+                    <button class="menu-item" onclick="showAdminView('settings')">
+                        ⚙️ Settings
+                    </button>
+                </div>
+            </div>
+
+            <div class="dashboard-main">
+                <!-- Admin Dashboard View -->
+                <div id="admin-dashboard-view" class="dashboard-view active">
+                    <div class="view-header">
+                        <h1>Admin Dashboard</h1>
+                        <p>Overview of all complaints and system statistics</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="admin-total-complaints">0</div>
+                                <div class="stat-label">Total Complaints</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⏳</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="admin-pending-complaints">0</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🔄</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="admin-progress-complaints">0</div>
+                                <div class="stat-label">In Progress</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="admin-resolved-complaints">0</div>
+                                <div class="stat-label">Resolved</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>📊 Status Overview</h3>
+                                <button class="btn btn-small" onclick="showAdminView('analytics')">
+                                    View Analytics
+                                </button>
+                            </div>
+                            <div class="card-content">
+                                <div id="dashboard-status-chart" style="min-height: 250px;">
+                                    Loading chart...
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Recent Complaints</h3>
+                                <button class="btn btn-small" onclick="showAdminView('complaints')">
+                                    View All
+                                </button>
+                            </div>
+                            <div class="card-content">
+                                <div id="admin-recent-complaints">
+                                    Loading...
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>🏢 Department Performance</h3>
+                            </div>
+                            <div class="card-content">
+                                <div id="dashboard-department-chart" style="min-height: 250px;">
+                                    Loading chart...
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>📈 Weekly Trends</h3>
+                            </div>
+                            <div class="card-content">
+                                <div id="dashboard-trends-chart" style="min-height: 250px;">
+                                    Loading chart...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Complaints View -->
+                <div id="admin-complaints-view" class="dashboard-view">
+                    <div class="view-header">
+                        <h1>All Complaints</h1>
+                        <p>Manage and resolve student complaints</p>
+                    </div>
+
+                    <div class="complaints-filters">
+                        <div class="filter-group">
+                            <select id="admin-status-filter" onchange="filterAdminComplaints()">
+                                <option value="">All Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Resolved">Resolved</option>
+                            </select>
+                            <select id="admin-department-filter" onchange="filterAdminComplaints()">
+                                <option value="">All Departments</option>
+                            </select>
+                            <select id="admin-priority-filter" onchange="filterAdminComplaints()">
+                                <option value="">All Priorities</option>
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                            <input type="text" id="admin-search-complaints" placeholder="Search complaints..." 
+                                   oninput="filterAdminComplaints()">
+                        </div>
+                    </div>
+
+                    <div class="complaints-container">
+                        <div id="admin-complaints-list">
+                            Loading complaints...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Students View -->
+                <div id="admin-students-view" class="dashboard-view">
+                    <div class="view-header">
+                        <h1>Students</h1>
+                        <p>Manage student accounts and information</p>
+                    </div>
+
+                    <div class="students-container">
+                        <div id="students-list">
+                            Loading students...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Departments View -->
+                <div id="admin-departments-view" class="dashboard-view">
+                    <div class="view-header">
+                        <h1>Departments</h1>
+                        <p>Manage departments and categories</p>
+                    </div>
+
+                    <div class="departments-container">
+                        <div id="departments-list">
+                            Loading departments...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics View -->
+                <div id="admin-analytics-view" class="dashboard-view">
+                    <div class="view-header">
+                        <h1>📊 Advanced Analytics</h1>
+                        <p>Comprehensive insights and performance metrics</p>
+                    </div>
+
+                    <div class="analytics-container">
+                        <div class="analytics-grid">
+                            <div class="analytics-card">
+                                <h3>📊 Complaint Status Distribution</h3>
+                                <div id="status-chart" style="min-height: 300px;">
+                                    Loading chart...
+                                </div>
+                            </div>
+                            
+                            <div class="analytics-card">
+                                <h3>🏢 Department Workload Analysis</h3>
+                                <div id="department-chart" style="min-height: 300px;">
+                                    Loading chart...
+                                </div>
+                            </div>
+                            
+                            <div class="analytics-card">
+                                <h3>📈 Monthly Trends</h3>
+                                <div id="trends-chart" style="min-height: 300px;">
+                                    Loading chart...
+                                </div>
+                            </div>
+                            
+                            <div class="analytics-card">
+                                <h3>⚡ Priority Distribution</h3>
+                                <div id="priority-chart" style="min-height: 300px;">
+                                    Loading chart...
+                                </div>
+                            </div>
+                            
+                            <div class="analytics-card">
+                                <h3>📈 Resolution Progress</h3>
+                                <div id="resolution-progress">
+                                    <div class="progress-bars">
+                                        <!-- Progress bars will be added dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="analytics-card">
+                                <h3>⏱️ Performance Metrics</h3>
+                                <div id="performance-metrics">
+                                    <div class="metric-item">
+                                        <span class="metric-label">Average Resolution Time</span>
+                                        <span class="metric-value" id="avg-resolution-time">3.2 days</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Response Rate</span>
+                                        <span class="metric-value" id="response-rate">94.5%</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Student Satisfaction</span>
+                                        <span class="metric-value" id="satisfaction-rate">4.2/5.0</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">First Response Time</span>
+                                        <span class="metric-value" id="first-response-time">2.1 hours</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Settings View -->
+                <div id="admin-settings-view" class="dashboard-view">
+                    <div class="view-header">
+                        <h1>System Settings</h1>
+                        <p>Configure system preferences and settings</p>
+                    </div>
+
+                    <div class="settings-container">
+                        <div class="settings-card">
+                            <h3>General Settings</h3>
+                            <form id="admin-settings-form">
+                                <div class="form-group">
+                                    <label for="system-name">System Name</label>
+                                    <input type="text" id="system-name" value="Smart Complaint System">
+                                </div>
+                                <div class="form-group">
+                                    <label for="admin-email-setting">Admin Email</label>
+                                    <input type="email" id="admin-email-setting" value="admin@college.edu">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">
+                                        Save Settings
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-overlay" onclick="hideLoginModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Welcome to SmartComplaint</h2>
+                <button class="modal-close" onclick="hideLoginModal()">×</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Floating Action Button -->
+    <button class="btn-floating" onclick="showQuickActions()" title="Quick Actions">
+        ⚡
+    </button>
+
+    <!-- Scripts -->
+    <script src="enhanced-features.js"></script>
+    <script src="advanced-components.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
