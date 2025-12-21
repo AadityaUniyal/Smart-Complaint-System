@@ -1,3 +1,6 @@
+// Interactive Features for Smart Complaint System
+// Advanced interactions and micro-animations
+
 class InteractiveFeatures {
     constructor() {
         this.init();
