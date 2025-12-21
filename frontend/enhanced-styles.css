@@ -1,7 +1,3 @@
-/* Enhanced Styles for Smart Complaint System */
-/* Advanced UI components and animations */
-
-/* Theme Selector */
 .theme-selector {
     position: fixed;
     top: 20px;
@@ -2892,4 +2888,481 @@ kbd {
         box-shadow: none;
         border: 1px solid #ccc;
     }
+}
+/* Enhanced Auth Tab Styling */
+.auth-tabs {
+    position: relative;
+    background: linear-gradient(135deg, 
+        rgba(229, 9, 20, 0.1) 0%, 
+        rgba(229, 9, 20, 0.05) 50%, 
+        rgba(229, 9, 20, 0.1) 100%);
+    border-radius: var(--radius-lg);
+    padding: 4px;
+    margin-bottom: var(--spacing-xl);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.auth-tab {
+    position: relative;
+    flex: 1;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    overflow: hidden;
+}
+
+.auth-tab::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-color), #ff1744);
+    border-radius: var(--radius-md);
+    transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+}
+
+.auth-tab:hover {
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.2);
+}
+
+.auth-tab:hover::before {
+    left: -50%;
+}
+
+.auth-tab.active {
+    color: white;
+    background: linear-gradient(135deg, var(--primary-color), #ff1744);
+    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
+    transform: translateY(-2px);
+}
+
+.auth-tab.active::before {
+    left: 0;
+}
+
+.tab-icon {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.auth-tab.active .tab-icon {
+    transform: scale(1.1);
+}
+
+.tab-text {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Enhanced User Dropdown */
+.user-dropdown {
+    min-width: 250px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    padding: var(--spacing-md);
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+}
+
+.user-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.user-info {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: var(--spacing-sm);
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.user-email {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.dropdown-item {
+    width: 100%;
+    padding: var(--spacing-md);
+    background: none;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.dropdown-item:hover {
+    background: var(--bg-tertiary);
+    color: var(--primary-color);
+    transform: translateX(4px);
+}
+
+.dropdown-item:last-child {
+    margin-bottom: 0;
+    color: #ef4444;
+}
+
+.dropdown-item:last-child:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Enhanced Modal Styles */
+.modal-footer {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: flex-end;
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+    margin-top: var(--spacing-lg);
+}
+
+/* Loading States */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Enhanced Dashboard Stats */
+.stat-card {
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-tertiary));
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), #ff1744);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover::before {
+    transform: scaleX(1);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-sm);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover .stat-number {
+    transform: scale(1.05);
+}
+
+/* Enhanced Notification Styles */
+.toast {
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toast.success {
+    background: linear-gradient(135deg, 
+        rgba(16, 185, 129, 0.9), 
+        rgba(16, 185, 129, 0.8));
+    border-left-color: #10b981;
+}
+
+.toast.error {
+    background: linear-gradient(135deg, 
+        rgba(239, 68, 68, 0.9), 
+        rgba(239, 68, 68, 0.8));
+    border-left-color: #ef4444;
+}
+
+.toast.warning {
+    background: linear-gradient(135deg, 
+        rgba(245, 158, 11, 0.9), 
+        rgba(245, 158, 11, 0.8));
+    border-left-color: #f59e0b;
+}
+
+.toast.info {
+    background: linear-gradient(135deg, 
+        rgba(59, 130, 246, 0.9), 
+        rgba(59, 130, 246, 0.8));
+    border-left-color: #3b82f6;
+}
+/* Enhanced View Header */
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.view-title-section h1 {
+    margin: 0 0 var(--spacing-sm) 0;
+    color: var(--text-primary);
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.view-title-section p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.view-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.view-actions .btn {
+    white-space: nowrap;
+}
+
+/* Responsive view header */
+@media (max-width: 768px) {
+    .view-header {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        align-items: stretch;
+    }
+    
+    .view-actions {
+        justify-content: flex-end;
+    }
+}
+
+/* Enhanced Stats Grid Animation */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.stat-card {
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Enhanced Button Loading State */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.btn-loading .btn-icon,
+.btn-loading span {
+    opacity: 0;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+/* Fix Modal Scrolling Issues */
+.modal {
+    padding: var(--spacing-lg);
+    box-sizing: border-box;
+    overflow-y: auto !important;
+    align-items: flex-start !important; /* Align to top instead of center */
+    padding-top: 5vh; /* Add some top padding */
+}
+
+.modal-content {
+    max-width: 600px !important;
+    width: 100% !important;
+    max-height: 90vh !important;
+    overflow: visible !important;
+    margin: 0 auto;
+    position: relative;
+}
+
+.modal-body {
+    max-height: calc(90vh - 80px) !important;
+    overflow-y: auto !important;
+    padding: var(--spacing-lg);
+}
+
+/* Auth Container Scrolling */
+.auth-container {
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+.auth-content {
+    max-height: calc(80vh - 200px);
+    overflow-y: auto;
+    padding-right: var(--spacing-sm);
+}
+
+.auth-panel {
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+/* Custom Scrollbar for Modal */
+.modal-body::-webkit-scrollbar,
+.auth-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track,
+.auth-content::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb,
+.auth-content::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover,
+.auth-content::-webkit-scrollbar-thumb:hover {
+    background: #ff1744;
+}
+
+/* Mobile Modal Fixes */
+@media (max-width: 768px) {
+    .modal {
+        padding: var(--spacing-sm) !important;
+        padding-top: 2vh !important;
+    }
+    
+    .modal-content {
+        max-width: 95vw !important;
+        max-height: 95vh !important;
+    }
+    
+    .modal-body {
+        max-height: calc(95vh - 60px) !important;
+        padding: var(--spacing-md);
+    }
+    
+    .auth-content {
+        max-height: calc(85vh - 150px);
+    }
+    
+    .form-row {
+        flex-direction: column !important;
+    }
+    
+    .form-group {
+        margin-bottom: var(--spacing-md) !important;
+    }
+}
+
+/* Ensure form sections don't overflow */
+.form-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Better spacing for auth tabs */
+.auth-tabs {
+    margin-bottom: var(--spacing-lg);
+    flex-shrink: 0;
+}
+
+.auth-header {
+    flex-shrink: 0;
+    margin-bottom: var(--spacing-lg);
 }
