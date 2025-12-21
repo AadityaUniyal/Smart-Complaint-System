@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Comprehensive API Testing Suite
-Tests all API endpoints with various scenarios
-"""
-
 import unittest
 import requests
 import json

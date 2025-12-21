@@ -9,14 +9,14 @@ class Department(db.Model):
     __tablename__ = 'departments'
     
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    code = db.Column(db.String(20), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False, index=True)  # Add index for faster queries
+    code = db.Column(db.String(20), unique=True, nullable=False, index=True)  # Add index
     description = db.Column(db.String(500))
     head_name = db.Column(db.String(100))
     email = db.Column(db.String(120))
     phone = db.Column(db.String(20))
     location = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)  # Add index
     
     # Relationships
     courses = db.relationship('Course', backref='department', lazy=True)
@@ -63,12 +63,12 @@ class ComplaintCategory(db.Model):
     __tablename__ = 'complaint_categories'
     
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False, index=True)  # Add index
     description = db.Column(db.String(500))
-    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
-    priority_level = db.Column(db.String(20), default='Medium')  # Low, Medium, High, Critical
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False, index=True)  # Add index
+    priority_level = db.Column(db.String(20), default='Medium', index=True)  # Add index
     typical_resolution_days = db.Column(db.Integer, default=7)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)  # Add index
     
     # Relationships
     complaints = db.relationship('Complaint', backref='complaint_category', lazy=True)
@@ -89,14 +89,14 @@ class User(UserMixin, db.Model):
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
-    unique_id = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    unique_id = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()), index=True)
     
     # Basic info
-    student_id = db.Column(db.String(50), unique=True, nullable=True)  # Primary identifier for students
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    student_id = db.Column(db.String(50), unique=True, nullable=True, index=True)  # Add index for faster lookups
+    name = db.Column(db.String(100), nullable=False, index=True)  # Add index
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)  # Add index
     phone = db.Column(db.String(20), nullable=True)
-    role = db.Column(db.String(20), nullable=False, default='student')  # 'student' or 'admin'
+    role = db.Column(db.String(20), nullable=False, default='student', index=True)  # Add index for role-based queries
     
     # Academic info (for students)
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=True)

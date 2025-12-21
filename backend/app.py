@@ -687,8 +687,8 @@ def get_all_student_complaints_from_csv():
         if not os.path.exists(csv_path):
             return jsonify([]), 200
         
-        # Read CSV file
-        df = pd.read_csv(csv_path)
+        # Read CSV file with optimized settings
+        df = pd.read_csv(csv_path, low_memory=False)
         
         # Convert to list of dictionaries
         complaints_list = df.to_dict('records')

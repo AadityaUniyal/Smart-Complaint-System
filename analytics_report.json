@@ -1,3 +1,115 @@
 {
-  "note": "Implementation file for Smart Complaint System - Content removed for privacy"
+  "total_complaints": 51,
+  "status_breakdown": {
+    "Resolved": 16,
+    "In Progress": 17,
+    "Pending": 18
+  },
+  "department_breakdown": {
+    "Hostel Management": 3,
+    "Mess & Catering": 2,
+    "IT Services": 5,
+    "Library Services": 2,
+    "Examination Cell": 1,
+    "Accounts & Finance": 1,
+    "Maintenance & Infrastructure": 2,
+    "Sports & Recreation": 1,
+    "Civil Engineering": 2,
+    "Electrical Engineering": 1,
+    "Electronics & Communication": 4,
+    "Mechanical Engineering": 2,
+    "Information Technology": 5,
+    "Placement Cell": 3,
+    "Computer Science & Engineering": 15,
+    "Transport Services": 1,
+    "Medical Services": 1
+  },
+  "priority_breakdown": {
+    "Medium": 31,
+    "High": 12,
+    "Critical": 2,
+    "Low": 6
+  },
+  "recent_activity": [
+    {
+      "admin_comments": NaN,
+      "category": "Academic Issues",
+      "complaint_id": "CMP2025120020",
+      "created_at": "2025-12-21 17:08:48",
+      "department": "Computer Science & Engineering",
+      "description": "This is a comprehensive workflow test complaint. It tests the complete submission process including validation, routing, and tracking. The complaint includes detailed information about a hypothetical issue that needs administrative attention.",
+      "priority": "Medium",
+      "resolved_at": NaN,
+      "status": "Pending",
+      "student_id": "21CSE001",
+      "student_name": "Rahul Kumar",
+      "title": "Workflow Test Complaint - 20251221_223842",
+      "updated_at": "2025-12-21 17:08:48",
+      "urgency_level": 4
+    },
+    {
+      "admin_comments": NaN,
+      "category": "Academic Issues",
+      "complaint_id": "CMP2025120019",
+      "created_at": "2025-12-21 17:05:21",
+      "department": "Computer Science & Engineering",
+      "description": "This is a comprehensive test complaint to verify the entire complaint submission and tracking system works correctly.",
+      "priority": "Medium",
+      "resolved_at": NaN,
+      "status": "Pending",
+      "student_id": "21CSE001",
+      "student_name": "Rahul Kumar",
+      "title": "Test Complaint - Full System Test",
+      "updated_at": "2025-12-21 17:05:21",
+      "urgency_level": 4
+    },
+    {
+      "admin_comments": NaN,
+      "category": "Academic Issues",
+      "complaint_id": "CMP2025120018",
+      "created_at": "2025-12-21 17:02:28",
+      "department": "Computer Science & Engineering",
+      "description": "This is a test complaint to verify the submission functionality works after proper authentication.",
+      "priority": "Medium",
+      "resolved_at": NaN,
+      "status": "Pending",
+      "student_id": "21CSE001",
+      "student_name": "Rahul Kumar",
+      "title": "Test Complaint - Authentication Test",
+      "updated_at": "2025-12-21 17:02:28",
+      "urgency_level": 3
+    },
+    {
+      "admin_comments": NaN,
+      "category": "Academic Issues",
+      "complaint_id": "CMP2025120017",
+      "created_at": "2025-12-21 11:03:22",
+      "department": "Computer Science & Engineering",
+      "description": "This is a test complaint to verify the system functionality. It should be processed correctly.",
+      "priority": "Medium",
+      "resolved_at": NaN,
+      "status": "In Progress",
+      "student_id": "24BTECHCSE014",
+      "student_name": "Test Student 1766314976",
+      "title": "Test Complaint 1766314995",
+      "updated_at": "2025-12-21 11:03:31",
+      "urgency_level": 3
+    },
+    {
+      "admin_comments": NaN,
+      "category": "Academic Issues",
+      "complaint_id": "CMP2025120016",
+      "created_at": "2025-12-21 10:58:12",
+      "department": "Computer Science & Engineering",
+      "description": "This is a test complaint to verify the system functionality. It should be processed correctly.",
+      "priority": "Medium",
+      "resolved_at": NaN,
+      "status": "In Progress",
+      "student_id": "24BTECHCSE013",
+      "student_name": "Test Student 1766314667",
+      "title": "Test Complaint 1766314685",
+      "updated_at": "2025-12-21 10:58:21",
+      "urgency_level": 3
+    }
+  ]
 }

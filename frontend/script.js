@@ -1,6 +1,8 @@
 // Smart Complaint System - Complete Frontend JavaScript
 // All functionality implemented
 
+console.log('🎯 Script.js is loading...');
+
 // Global Variables
 const API_BASE = 'http://localhost:5000/api';
 let currentUser = null;
@@ -11,6 +13,8 @@ let categories = [];
 let complaints = [];
 let allComplaints = [];
 let students = [];
+
+console.log('🎯 Global variables initialized');
 
 // DOM Elements
 let loadingScreen = null;
@@ -40,8 +44,58 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup form validation
     setupFormValidation();
     
+    // Test API immediately for debugging
+    setTimeout(() => {
+        console.log('🧪 Testing API connection...');
+        testAPIConnection();
+    }, 2000);
+    
     console.log('✅ Application initialized successfully');
 });
+
+// Test API connection function
+async function testAPIConnection() {
+    try {
+        document.getElementById('api-status').textContent = 'Testing...';
+        
+        console.log('🔗 Testing API health...');
+        const healthResponse = await fetch(`${API_BASE}/health`);
+        const healthData = await healthResponse.json();
+        console.log('✅ API Health:', healthData);
+        
+        console.log('🔗 Testing complaints endpoint...');
+        const complaintsResponse = await fetch(`${API_BASE}/all-student-complaints`);
+        const complaintsData = await complaintsResponse.json();
+        console.log('✅ API Complaints:', complaintsData.length, 'complaints loaded');
+        
+        // Update debug panel
+        document.getElementById('api-status').textContent = 'Connected';
+        document.getElementById('complaints-count').textContent = complaintsData.length;
+        
+        // Force update stats for testing
+        allComplaints = complaintsData;
+        updateAdminStats();
+        
+    } catch (error) {
+        console.error('❌ API Test failed:', error);
+        document.getElementById('api-status').textContent = 'Failed: ' + error.message;
+    }
+}
+
+// Force login function for testing
+function forceLogin() {
+    const testUser = {
+        id: 1,
+        name: 'Test Admin',
+        email: 'admin@college.edu',
+        role: 'admin'
+    };
+    
+    currentUser = testUser;
+    localStorage.setItem('smartcomplaint_user', JSON.stringify(currentUser));
+    console.log('🔐 Force login successful');
+    showAdminDashboard();
+}
 
 // Initialize DOM Elements
 function initializeDOMElements() {
@@ -131,6 +185,52 @@ function checkUserSession() {
     }
 }
 
+// Refresh admin data function
+async function refreshAdminData() {
+    const refreshBtn = document.querySelector('[onclick="refreshAdminData()"]');
+    if (refreshBtn) {
+        refreshBtn.classList.add('btn-loading');
+        refreshBtn.disabled = true;
+    }
+    
+    try {
+        showToast('Refreshing data...', 'info', 2000);
+        await loadAdminData();
+        showToast('Data refreshed successfully!', 'success');
+    } catch (error) {
+        console.error('❌ Error refreshing data:', error);
+        showToast('Failed to refresh data', 'error');
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.classList.remove('btn-loading');
+            refreshBtn.disabled = false;
+        }
+    }
+}
+
+// Refresh student data function
+async function refreshStudentData() {
+    const refreshBtn = document.querySelector('[onclick="refreshStudentData()"]');
+    if (refreshBtn) {
+        refreshBtn.classList.add('btn-loading');
+        refreshBtn.disabled = true;
+    }
+    
+    try {
+        showToast('Refreshing data...', 'info', 2000);
+        await loadStudentData();
+        showToast('Data refreshed successfully!', 'success');
+    } catch (error) {
+        console.error('❌ Error refreshing data:', error);
+        showToast('Failed to refresh data', 'error');
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.classList.remove('btn-loading');
+            refreshBtn.disabled = false;
+        }
+    }
+}
+
 // Setup Event Listeners
 function setupEventListeners() {
     // Mobile menu toggle
@@ -162,6 +262,37 @@ function setupEventListeners() {
         });
     }
     
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Close modal with Escape key
+        if (e.key === 'Escape') {
+            if (loginModal && loginModal.classList.contains('active')) {
+                hideLoginModal();
+            }
+        }
+        
+        // Tab navigation within modal
+        if (e.key === 'Tab' && loginModal && loginModal.classList.contains('active')) {
+            const focusableElements = loginModal.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+            
+            if (e.shiftKey) {
+                if (document.activeElement === firstElement) {
+                    e.preventDefault();
+                    lastElement.focus();
+                }
+            } else {
+                if (document.activeElement === lastElement) {
+                    e.preventDefault();
+                    firstElement.focus();
+                }
+            }
+        }
+    });
+    
     console.log('🎯 Event listeners setup complete');
 }
 
@@ -191,7 +322,25 @@ function showLoginModal() {
     if (loginModal) {
         loginModal.classList.add('active');
         document.body.style.overflow = 'hidden';
+        
+        // Reset modal scroll position
+        const modalBody = loginModal.querySelector('.modal-body');
+        if (modalBody) {
+            modalBody.scrollTop = 0;
+        }
+        
+        // Ensure modal is scrollable
+        loginModal.style.overflowY = 'auto';
+        
         showRoleSelection();
+        
+        // Focus management for accessibility
+        setTimeout(() => {
+            const firstInput = loginModal.querySelector('input, button');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }, 300);
     }
 }
 
@@ -392,10 +541,6 @@ function showRoleSelection() {
     `;
 }
 
-
-
-
-
 // Authentication Functions
 async function handleStudentRegistration(event) {
     event.preventDefault();
@@ -499,6 +644,8 @@ async function handleAdminLogin(event) {
 
 // Dashboard Functions
 function showStudentDashboard() {
+    console.log('🎯 Showing student dashboard...');
+    
     // Hide landing page
     const landingPage = document.getElementById('landing-page');
     const adminDashboard = document.getElementById('admin-dashboard');
@@ -511,14 +658,19 @@ function showStudentDashboard() {
     // Update user info
     updateStudentInfo();
     
-    // Load student data
-    loadStudentData();
+    // Force load student data
+    setTimeout(() => {
+        console.log('🔄 Force loading student data...');
+        loadStudentData();
+    }, 500);
     
     // Show overview by default
     showDashboardView('overview');
 }
 
 function showAdminDashboard() {
+    console.log('🎯 Showing admin dashboard...');
+    
     // Hide landing page
     const landingPage = document.getElementById('landing-page');
     const studentDashboard = document.getElementById('student-dashboard');
@@ -531,8 +683,11 @@ function showAdminDashboard() {
     // Update admin info
     updateAdminInfo();
     
-    // Load admin data
-    loadAdminData();
+    // Force load admin data
+    setTimeout(() => {
+        console.log('🔄 Force loading admin data...');
+        loadAdminData();
+    }, 500);
     
     // Show dashboard by default
     showAdminView('dashboard');
@@ -586,47 +741,123 @@ function updateAdminInfo() {
 }
 
 async function loadStudentData() {
-    if (!currentUser || !currentUser.student_id) return;
+    if (!currentUser || !currentUser.student_id) {
+        console.log('⚠️ No student ID found, cannot load student data');
+        return;
+    }
     
     try {
+        console.log('📊 Loading student data for ID:', currentUser.student_id);
+        
+        // Show loading indicators
+        const totalEl = document.getElementById('student-total-complaints');
+        const pendingEl = document.getElementById('student-pending-complaints');
+        const progressEl = document.getElementById('student-progress-complaints');
+        const resolvedEl = document.getElementById('student-resolved-complaints');
+        
+        if (totalEl) totalEl.textContent = '...';
+        if (pendingEl) pendingEl.textContent = '...';
+        if (progressEl) progressEl.textContent = '...';
+        if (resolvedEl) resolvedEl.textContent = '...';
+        
         // Load student complaints
         const response = await fetch(`${API_BASE}/student-complaints/${currentUser.student_id}`);
         if (response.ok) {
             complaints = await response.json();
+            console.log(`✅ Loaded ${complaints.length} student complaints`);
             updateStudentStats();
             updateRecentComplaints();
             updateComplaintsList();
+        } else {
+            console.error('❌ Failed to load student complaints:', response.status);
+            showToast('Failed to load your complaints', 'error');
+            
+            // Reset to 0 if failed
+            if (totalEl) totalEl.textContent = '0';
+            if (pendingEl) pendingEl.textContent = '0';
+            if (progressEl) progressEl.textContent = '0';
+            if (resolvedEl) resolvedEl.textContent = '0';
         }
     } catch (error) {
-        console.error('Error loading student data:', error);
+        console.error('❌ Error loading student data:', error);
         showToast('Failed to load your complaints. Please refresh the page.', 'error');
     }
 }
 
 async function loadAdminData() {
     try {
+        console.log('📊 Loading admin data...');
+        
+        // Show loading indicators
+        const totalEl = document.getElementById('admin-total-complaints');
+        const pendingEl = document.getElementById('admin-pending-complaints');
+        const progressEl = document.getElementById('admin-progress-complaints');
+        const resolvedEl = document.getElementById('admin-resolved-complaints');
+        
+        if (totalEl) totalEl.textContent = '...';
+        if (pendingEl) pendingEl.textContent = '...';
+        if (progressEl) progressEl.textContent = '...';
+        if (resolvedEl) resolvedEl.textContent = '...';
+        
         // Load all complaints
         const complaintsResponse = await fetch(`${API_BASE}/all-student-complaints`);
         if (complaintsResponse.ok) {
-            allComplaints = await complaintsResponse.json();
+            const responseData = await complaintsResponse.json();
+            console.log('📊 Raw API response:', responseData);
+            console.log('📊 Response type:', typeof responseData);
+            console.log('📊 Is array:', Array.isArray(responseData));
+            
+            // Ensure we have an array
+            if (Array.isArray(responseData)) {
+                allComplaints = responseData;
+            } else if (responseData && responseData.data && Array.isArray(responseData.data)) {
+                allComplaints = responseData.data;
+            } else {
+                console.error('❌ Unexpected response format:', responseData);
+                allComplaints = [];
+            }
+            
+            console.log(`✅ Loaded ${allComplaints.length} complaints`);
             updateAdminStats();
             updateAdminRecentComplaints();
             updateAdminComplaintsList();
+        } else {
+            console.error('❌ Failed to load complaints:', complaintsResponse.status);
+            showToast('Failed to load complaints data', 'error');
         }
         
         // Load students
         const studentsResponse = await fetch(`${API_BASE}/students`);
         if (studentsResponse.ok) {
             students = await studentsResponse.json();
+            console.log(`✅ Loaded ${students.length} students`);
             updateStudentsList();
+        } else {
+            console.error('❌ Failed to load students:', studentsResponse.status);
         }
         
         // Update department stats
         updateDepartmentStats();
         
+        // Create analytics charts if available
+        if (typeof createAnalyticsCharts === 'function') {
+            createAnalyticsCharts();
+        }
+        
     } catch (error) {
-        console.error('Error loading admin data:', error);
+        console.error('❌ Error loading admin data:', error);
         showToast('Failed to load admin data. Please refresh the page.', 'error');
+        
+        // Reset loading indicators
+        const totalEl = document.getElementById('admin-total-complaints');
+        const pendingEl = document.getElementById('admin-pending-complaints');
+        const progressEl = document.getElementById('admin-progress-complaints');
+        const resolvedEl = document.getElementById('admin-resolved-complaints');
+        
+        if (totalEl) totalEl.textContent = '0';
+        if (pendingEl) pendingEl.textContent = '0';
+        if (progressEl) progressEl.textContent = '0';
+        if (resolvedEl) resolvedEl.textContent = '0';
     }
 }
 
@@ -648,20 +879,63 @@ function updateStudentStats() {
 }
 
 function updateAdminStats() {
-    const total = allComplaints.length;
-    const pending = allComplaints.filter(c => c.status === 'Pending').length;
-    const inProgress = allComplaints.filter(c => c.status === 'In Progress').length;
-    const resolved = allComplaints.filter(c => c.status === 'Resolved').length;
+    console.log('📊 Updating admin stats...');
+    console.log('All complaints data:', allComplaints);
+    console.log('Data type:', typeof allComplaints);
+    console.log('Is array:', Array.isArray(allComplaints));
+    
+    // Handle case where data might not be an array
+    let complaintsArray = allComplaints;
+    if (!Array.isArray(allComplaints)) {
+        console.warn('⚠️ allComplaints is not an array, attempting to fix...');
+        if (allComplaints && allComplaints.data && Array.isArray(allComplaints.data)) {
+            complaintsArray = allComplaints.data;
+        } else if (allComplaints && typeof allComplaints === 'object') {
+            complaintsArray = [allComplaints];
+        } else {
+            complaintsArray = [];
+        }
+    }
+    
+    const total = complaintsArray.length;
+    const pending = complaintsArray.filter(c => c.status === 'Pending').length;
+    const inProgress = complaintsArray.filter(c => c.status === 'In Progress').length;
+    const resolved = complaintsArray.filter(c => c.status === 'Resolved').length;
+    
+    console.log('📊 Admin Stats:', { total, pending, inProgress, resolved });
     
     const totalEl = document.getElementById('admin-total-complaints');
     const pendingEl = document.getElementById('admin-pending-complaints');
     const progressEl = document.getElementById('admin-progress-complaints');
     const resolvedEl = document.getElementById('admin-resolved-complaints');
     
-    if (totalEl) totalEl.textContent = total;
-    if (pendingEl) pendingEl.textContent = pending;
-    if (progressEl) progressEl.textContent = inProgress;
-    if (resolvedEl) resolvedEl.textContent = resolved;
+    if (totalEl) {
+        totalEl.textContent = total;
+        console.log('✅ Updated total complaints:', total);
+    } else {
+        console.error('❌ Element not found: admin-total-complaints');
+    }
+    
+    if (pendingEl) {
+        pendingEl.textContent = pending;
+        console.log('✅ Updated pending complaints:', pending);
+    } else {
+        console.error('❌ Element not found: admin-pending-complaints');
+    }
+    
+    if (progressEl) {
+        progressEl.textContent = inProgress;
+        console.log('✅ Updated in-progress complaints:', inProgress);
+    } else {
+        console.error('❌ Element not found: admin-progress-complaints');
+    }
+    
+    if (resolvedEl) {
+        resolvedEl.textContent = resolved;
+        console.log('✅ Updated resolved complaints:', resolved);
+    } else {
+        console.error('❌ Element not found: admin-resolved-complaints');
+    }
 }
 
 function updateRecentComplaints() {
@@ -756,7 +1030,6 @@ function updateComplaintsList() {
         </div>
     `).join('');
 }
-
 function updateAdminComplaintsList() {
     const complaintsContainer = document.getElementById('admin-complaints-list');
     if (!complaintsContainer) return;
@@ -836,6 +1109,8 @@ function updateDepartmentStats() {
 
 // View Management
 function showDashboardView(viewName) {
+    console.log(`🔄 Switching to view: ${viewName}`);
+    
     // Hide all views
     document.querySelectorAll('.dashboard-view').forEach(view => {
         view.classList.remove('active');
@@ -845,27 +1120,47 @@ function showDashboardView(viewName) {
     const targetView = document.getElementById(`${viewName}-view`);
     if (targetView) {
         targetView.classList.add('active');
+        console.log(`✅ View ${viewName} activated`);
+    } else {
+        console.error(`❌ View ${viewName}-view not found`);
     }
     
-    // Update menu items
-    document.querySelectorAll('.menu-item').forEach(item => {
+    // Update menu items - handle both old and new menu structures
+    document.querySelectorAll('#student-dashboard .menu-item').forEach(item => {
         item.classList.remove('active');
     });
     
-    const activeMenuItem = document.querySelector(`[onclick="showDashboardView('${viewName}')"]`);
+    // Find and activate the correct menu item
+    const activeMenuItem = document.querySelector(`#student-dashboard [onclick="showDashboardView('${viewName}')"]`);
     if (activeMenuItem) {
         activeMenuItem.classList.add('active');
+        console.log(`✅ Menu item for ${viewName} activated`);
     }
     
     // Load view-specific data
     if (viewName === 'new-complaint') {
         loadComplaintForm();
+    } else if (viewName === 'my-complaints') {
+        loadStudentComplaints();
+    } else if (viewName === 'overview') {
+        loadStudentOverview();
     }
+    
+    // Update page title
+    const titles = {
+        'overview': 'Dashboard - Overview',
+        'new-complaint': 'Dashboard - New Complaint',
+        'my-complaints': 'Dashboard - My Complaints',
+        'profile': 'Dashboard - Profile'
+    };
+    document.title = titles[viewName] || 'Smart Complaint System';
 }
 
 function showAdminView(viewName) {
+    console.log(`🔄 Switching to admin view: ${viewName}`);
+    
     // Hide all views
-    document.querySelectorAll('.dashboard-view').forEach(view => {
+    document.querySelectorAll('#admin-dashboard .dashboard-view').forEach(view => {
         view.classList.remove('active');
     });
     
@@ -873,36 +1168,160 @@ function showAdminView(viewName) {
     const targetView = document.getElementById(`admin-${viewName}-view`);
     if (targetView) {
         targetView.classList.add('active');
+        console.log(`✅ Admin view ${viewName} activated`);
+    } else {
+        console.error(`❌ Admin view ${viewName}-view not found`);
     }
     
     // Update menu items
-    document.querySelectorAll('.menu-item').forEach(item => {
+    document.querySelectorAll('#admin-dashboard .menu-item').forEach(item => {
         item.classList.remove('active');
     });
     
-    const activeMenuItem = document.querySelector(`[onclick="showAdminView('${viewName}')"]`);
+    // Find and activate the correct menu item
+    const activeMenuItem = document.querySelector(`#admin-dashboard [onclick="showAdminView('${viewName}')"]`);
     if (activeMenuItem) {
         activeMenuItem.classList.add('active');
+        console.log(`✅ Admin menu item for ${viewName} activated`);
     }
+    
+    // Load view-specific data
+    if (viewName === 'dashboard') {
+        loadAdminDashboard();
+    } else if (viewName === 'complaints') {
+        loadAllComplaints();
+    } else if (viewName === 'students') {
+        loadStudentsData();
+    } else if (viewName === 'departments') {
+        loadDepartmentsData();
+    } else if (viewName === 'analytics') {
+        loadAnalyticsData();
+    }
+    
+    // Update page title
+    const titles = {
+        'dashboard': 'Admin - Dashboard',
+        'complaints': 'Admin - All Complaints',
+        'students': 'Admin - Students',
+        'departments': 'Admin - Departments',
+        'analytics': 'Admin - Analytics',
+        'settings': 'Admin - Settings'
+    };
+    document.title = titles[viewName] || 'Smart Complaint System - Admin';
 }
 
 // Complaint Form
 function loadComplaintForm() {
+    console.log('📋 Loading complaint form...');
+    console.log('Available departments:', departments.length);
+    console.log('Available categories:', categories.length);
+    
     // Populate departments
     const deptSelect = document.getElementById('complaint-department');
     if (deptSelect && departments.length > 0) {
         deptSelect.innerHTML = '<option value="">Select Department</option>' +
             departments.map(dept => `<option value="${dept.id}">${dept.name}</option>`).join('');
         
+        console.log('✅ Populated departments dropdown');
+        
         deptSelect.addEventListener('change', function() {
+            console.log('🔄 Department changed to:', this.value);
             loadCategoriesForDepartment(this.value);
         });
+    } else {
+        console.error('❌ Department select not found or no departments available');
+        // If no departments, try to load them
+        if (departments.length === 0) {
+            loadDepartments();
+        }
+    }
+    
+    // Add form validation
+    setupComplaintFormValidation();
+}
+
+function setupComplaintFormValidation() {
+    const form = document.getElementById('complaint-form');
+    if (!form) return;
+    
+    const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', validateField);
+        input.addEventListener('input', clearFieldError);
+    });
+}
+
+function validateField(event) {
+    const field = event.target;
+    const value = field.value.trim();
+    
+    // Remove existing error styling
+    field.parentElement.classList.remove('error');
+    
+    if (field.hasAttribute('required') && !value) {
+        showFieldError(field, 'This field is required');
+        return false;
+    }
+    
+    // Specific validations
+    if (field.type === 'email' && value && !isValidEmail(value)) {
+        showFieldError(field, 'Please enter a valid email address');
+        return false;
+    }
+    
+    if (field.name === 'title' && value && value.length < 5) {
+        showFieldError(field, 'Title must be at least 5 characters long');
+        return false;
+    }
+    
+    if (field.name === 'description' && value && value.length < 20) {
+        showFieldError(field, 'Description must be at least 20 characters long');
+        return false;
+    }
+    
+    return true;
+}
+
+function showFieldError(field, message) {
+    field.parentElement.classList.add('error');
+    
+    // Remove existing error message
+    const existingError = field.parentElement.querySelector('.field-error');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // Add new error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'field-error';
+    errorDiv.textContent = message;
+    field.parentElement.appendChild(errorDiv);
+}
+
+function clearFieldError(event) {
+    const field = event.target;
+    field.parentElement.classList.remove('error');
+    
+    const errorDiv = field.parentElement.querySelector('.field-error');
+    if (errorDiv) {
+        errorDiv.remove();
     }
 }
 
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
 function loadCategoriesForDepartment(departmentId) {
+    console.log('📋 Loading categories for department:', departmentId);
+    
     const catSelect = document.getElementById('complaint-category');
-    if (!catSelect) return;
+    if (!catSelect) {
+        console.error('❌ Category select not found');
+        return;
+    }
     
     if (!departmentId) {
         catSelect.innerHTML = '<option value="">Select Category</option>';
@@ -910,25 +1329,49 @@ function loadCategoriesForDepartment(departmentId) {
     }
     
     const deptCategories = categories.filter(cat => cat.department_id == departmentId);
+    console.log('Found categories for department:', deptCategories.length);
+    
     catSelect.innerHTML = '<option value="">Select Category</option>' +
         deptCategories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+    
+    console.log('✅ Populated categories dropdown');
 }
 
 async function handleComplaintSubmission(event) {
     event.preventDefault();
     
+    console.log('🚀 Submitting complaint...');
+    console.log('Current user:', currentUser);
+    
+    // Validate form before submission
+    const form = event.target;
+    const isValid = validateComplaintForm(form);
+    
+    if (!isValid) {
+        showToast('Please fix the errors in the form before submitting', 'error');
+        return;
+    }
+    
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData.entries());
     
-    // Add student info
-    data.student_id = currentUser.student_id;
+    // Add user info - backend expects user_id, not student_id
+    if (!currentUser || !currentUser.id) {
+        showToast('Please login first to submit a complaint', 'error');
+        return;
+    }
+    
+    data.user_id = currentUser.id; // Backend expects user_id
     data.student_name = currentUser.name;
     data.student_email = currentUser.email;
     
+    console.log('Complaint data:', data);
+    
     const submitBtn = event.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Submitting...';
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '⏳ Submitting...';
     submitBtn.disabled = true;
+    submitBtn.classList.add('btn-loading');
     
     try {
         const response = await fetch(`${API_BASE}/complaints`, {
@@ -939,29 +1382,74 @@ async function handleComplaintSubmission(event) {
             body: JSON.stringify(data)
         });
         
+        console.log('Response status:', response.status);
         const result = await response.json();
+        console.log('Response data:', result);
         
         if (response.ok) {
-            showToast('Complaint submitted successfully!', 'success');
+            showToast('🎉 Complaint submitted successfully! You will receive updates via email.', 'success');
             event.target.reset();
-            loadStudentData(); // Refresh data
-            showDashboardView('my-complaints');
+            
+            // Clear any error states
+            form.querySelectorAll('.form-group').forEach(group => {
+                group.classList.remove('error');
+                const errorDiv = group.querySelector('.field-error');
+                if (errorDiv) errorDiv.remove();
+            });
+            
+            // Refresh data and switch to complaints view
+            loadStudentData();
+            setTimeout(() => {
+                showDashboardView('my-complaints');
+            }, 1500);
+            
         } else {
+            console.error('Submission failed:', result);
             showToast(result.error || 'Failed to submit complaint. Please try again.', 'error');
         }
     } catch (error) {
         console.error('Complaint submission error:', error);
         showToast('Network error. Please check your connection and try again.', 'error');
     } finally {
-        submitBtn.textContent = originalText;
+        submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
+        submitBtn.classList.remove('btn-loading');
     }
+}
+
+function validateComplaintForm(form) {
+    let isValid = true;
+    const requiredFields = form.querySelectorAll('input[required], select[required], textarea[required]');
+    
+    requiredFields.forEach(field => {
+        if (!validateField({ target: field })) {
+            isValid = false;
+        }
+    });
+    
+    return isValid;
 }
 
 function clearComplaintForm() {
     const form = document.getElementById('complaint-form');
     if (form) {
+        // Reset form
         form.reset();
+        
+        // Clear error states
+        form.querySelectorAll('.form-group').forEach(group => {
+            group.classList.remove('error');
+            const errorDiv = group.querySelector('.field-error');
+            if (errorDiv) errorDiv.remove();
+        });
+        
+        // Reset category dropdown
+        const categorySelect = document.getElementById('complaint-category');
+        if (categorySelect) {
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+        }
+        
+        showToast('Form cleared', 'info');
     }
 }
 
@@ -970,21 +1458,47 @@ function toggleUserMenu() {
     const dropdown = document.getElementById('user-dropdown') || document.getElementById('admin-dropdown');
     if (dropdown) {
         dropdown.classList.toggle('active');
+        
+        // Close menu when clicking outside
+        if (dropdown.classList.contains('active')) {
+            document.addEventListener('click', closeUserMenuOnOutsideClick);
+        } else {
+            document.removeEventListener('click', closeUserMenuOnOutsideClick);
+        }
+    }
+}
+
+function closeUserMenuOnOutsideClick(event) {
+    const userMenu = event.target.closest('.user-menu');
+    if (!userMenu) {
+        const dropdown = document.getElementById('user-dropdown') || document.getElementById('admin-dropdown');
+        if (dropdown) {
+            dropdown.classList.remove('active');
+            document.removeEventListener('click', closeUserMenuOnOutsideClick);
+        }
     }
 }
 
 function showProfile() {
-    showDashboardView('profile');
+    if (currentUser?.role === 'admin') {
+        showAdminView('settings');
+    } else {
+        showDashboardView('profile');
+    }
     toggleUserMenu();
 }
 
 function showSettings() {
-    showToast('Settings feature coming soon!', 'info');
+    if (currentUser?.role === 'admin') {
+        showAdminView('settings');
+    } else {
+        showToast('Settings feature coming soon!', 'info');
+    }
     toggleUserMenu();
 }
 
 function showAdminProfile() {
-    showToast('Admin profile feature coming soon!', 'info');
+    showAdminView('settings');
     toggleUserMenu();
 }
 
@@ -1113,8 +1627,20 @@ function updateAdminComplaintsDisplay(complaintsToShow) {
 
 // Logout Function
 function logout() {
+    // Show confirmation dialog
+    if (!confirm('Are you sure you want to logout?')) {
+        return;
+    }
+    
+    // Clear user data
     currentUser = null;
     localStorage.removeItem('smartcomplaint_user');
+    
+    // Clear any cached data
+    complaints = [];
+    allComplaints = [];
+    departments = [];
+    categories = [];
     
     // Hide dashboards and show landing page
     const landingPage = document.getElementById('landing-page');
@@ -1125,7 +1651,18 @@ function logout() {
     if (studentDashboard) studentDashboard.classList.add('hidden');
     if (adminDashboard) adminDashboard.classList.add('hidden');
     
+    // Close any open dropdowns
+    const dropdown = document.getElementById('user-dropdown') || document.getElementById('admin-dropdown');
+    if (dropdown) {
+        dropdown.classList.remove('active');
+    }
+    
+    // Reset page title
+    document.title = 'Smart Complaint System';
+    
     showToast('Logged out successfully', 'success');
+    
+    console.log('🚪 User logged out successfully');
 }
 
 // Toast Notification System
@@ -1164,10 +1701,26 @@ function showToast(message, type = 'info', duration = 5000) {
 
 // Setup complaint form submission
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 Setting up complaint form...');
+    
     // Setup complaint form if it exists
     const complaintForm = document.getElementById('complaint-form');
     if (complaintForm) {
+        console.log('✅ Found complaint form, attaching event listener');
         complaintForm.addEventListener('submit', handleComplaintSubmission);
+        
+        // Also check if form is properly structured
+        const requiredFields = ['title', 'department_id', 'category_id', 'description'];
+        requiredFields.forEach(fieldName => {
+            const field = complaintForm.querySelector(`[name="${fieldName}"]`);
+            if (field) {
+                console.log(`✅ Found required field: ${fieldName}`);
+            } else {
+                console.error(`❌ Missing required field: ${fieldName}`);
+            }
+        });
+    } else {
+        console.error('❌ Complaint form not found!');
     }
 });
 
@@ -1229,7 +1782,6 @@ function createParticle(container) {
         }
     }, 8000);
 }
-
 // Enhanced form validation
 function validateFormField(field, value, type) {
     const formGroup = field.closest('.form-group');
@@ -1494,6 +2046,23 @@ function switchAuthTab(tabName) {
         const targetPanel = document.getElementById(`${tabName}-panel`);
         if (targetPanel) {
             targetPanel.classList.add('active');
+            
+            // Ensure modal scrolls to top when switching tabs
+            const modalBody = document.querySelector('.modal-body');
+            const authContent = document.querySelector('.auth-content');
+            
+            if (modalBody) {
+                modalBody.scrollTop = 0;
+            }
+            if (authContent) {
+                authContent.scrollTop = 0;
+            }
+            
+            // Focus first input in the new panel
+            const firstInput = targetPanel.querySelector('input');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 100);
+            }
         }
     }, 150);
 }
@@ -1925,450 +2494,63 @@ setTimeout(() => {
 }, 2000);
 
 console.log('🎯 Smart Complaint System - JavaScript loaded successfully');
-// Professional Theme Management
-class ThemeManager {
-    constructor() {
-        this.themes = {
-            dark: {
-                name: 'Dark Professional',
-                icon: '🌙',
-                colors: {
-                    '--bg-primary': '#0f0f0f',
-                    '--bg-secondary': '#1a1a1a',
-                    '--bg-tertiary': '#2a2a2a',
-                    '--bg-card': '#1e1e1e',
-                    '--text-primary': '#ffffff',
-                    '--text-secondary': '#b3b3b3',
-                    '--text-muted': '#666666',
-                    '--border-color': '#333333',
-                    '--border-light': '#404040'
-                }
-            },
-            light: {
-                name: 'Light Professional',
-                icon: '☀️',
-                colors: {
-                    '--bg-primary': '#ffffff',
-                    '--bg-secondary': '#f8f9fa',
-                    '--bg-tertiary': '#e9ecef',
-                    '--bg-card': '#ffffff',
-                    '--text-primary': '#212529',
-                    '--text-secondary': '#6c757d',
-                    '--text-muted': '#adb5bd',
-                    '--border-color': '#dee2e6',
-                    '--border-light': '#e9ecef'
-                }
-            },
-            blue: {
-                name: 'Corporate Blue',
-                icon: '💼',
-                colors: {
-                    '--bg-primary': '#0a1628',
-                    '--bg-secondary': '#1e2a3a',
-                    '--bg-tertiary': '#2d3e50',
-                    '--bg-card': '#1a252f',
-                    '--text-primary': '#ecf0f1',
-                    '--text-secondary': '#bdc3c7',
-                    '--text-muted': '#7f8c8d',
-                    '--border-color': '#34495e',
-                    '--border-light': '#3e5771'
-                }
-            }
-        };
-        this.currentTheme = localStorage.getItem('smartcomplaint_theme') || 'dark';
-        this.init();
-    }
-
-    init() {
-        this.applyTheme(this.currentTheme);
-        this.createThemeSelector();
-    }
-
-    applyTheme(themeName) {
-        const theme = this.themes[themeName];
-        if (!theme) return;
-
-        const root = document.documentElement;
-        Object.entries(theme.colors).forEach(([property, value]) => {
-            root.style.setProperty(property, value);
-        });
-
-        this.currentTheme = themeName;
-        localStorage.setItem('smartcomplaint_theme', themeName);
-        
-        // Update theme button icon
-        const themeBtn = document.querySelector('.theme-toggle');
-        if (themeBtn) {
-            themeBtn.textContent = theme.icon;
-            themeBtn.title = `Current: ${theme.name}`;
-        }
-    }
-
-    createThemeSelector() {
-        // Create floating theme selector
-        const selector = document.createElement('div');
-        selector.className = 'theme-selector';
-        selector.innerHTML = `
-            <div class="theme-options">
-                ${Object.entries(this.themes).map(([key, theme]) => `
-                    <button class="theme-option ${key === this.currentTheme ? 'active' : ''}" 
-                            data-theme="${key}" title="${theme.name}">
-                        ${theme.icon}
-                    </button>
-                `).join('')}
+// Make logout function more visible and accessible
+function showLogoutConfirmation() {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="this.parentElement.remove()"></div>
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>🚪 Confirm Logout</h2>
+                <button class="modal-close" onclick="this.closest('.modal').remove()">×</button>
             </div>
-        `;
-
-        document.body.appendChild(selector);
-
-        // Add event listeners
-        selector.addEventListener('click', (e) => {
-            if (e.target.classList.contains('theme-option')) {
-                const themeName = e.target.dataset.theme;
-                this.applyTheme(themeName);
-                
-                // Update active state
-                selector.querySelectorAll('.theme-option').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.theme === themeName);
-                });
-            }
-        });
-
-        // Toggle selector visibility
-        let selectorVisible = false;
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 't') {
-                e.preventDefault();
-                selectorVisible = !selectorVisible;
-                selector.classList.toggle('active', selectorVisible);
-            }
-        });
-
-        // Hide selector when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!selector.contains(e.target) && !e.target.classList.contains('theme-toggle')) {
-                selectorVisible = false;
-                selector.classList.remove('active');
-            }
-        });
-    }
-
-    toggle() {
-        const themes = Object.keys(this.themes);
-        const currentIndex = themes.indexOf(this.currentTheme);
-        const nextIndex = (currentIndex + 1) % themes.length;
-        this.applyTheme(themes[nextIndex]);
-    }
+            <div class="modal-body">
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                <button class="btn btn-primary" onclick="logout(); this.closest('.modal').remove();">Yes, Logout</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
-
-// Professional Keyboard Shortcuts
-class KeyboardShortcuts {
-    constructor() {
-        this.shortcuts = {
-            'ctrl+/': 'Show this help',
-            'ctrl+n': 'New complaint (student)',
-            'ctrl+d': 'Dashboard',
-            'ctrl+t': 'Toggle theme selector',
-            'ctrl+k': 'Quick actions',
-            'ctrl+f': 'Focus search',
-            'esc': 'Close modals/dropdowns'
-        };
-        this.init();
-    }
-
-    init() {
-        document.addEventListener('keydown', (e) => {
-            // Show help
-            if (e.ctrlKey && e.key === '/') {
-                e.preventDefault();
-                this.showHelp();
-            }
-            
-            // New complaint
-            if (e.ctrlKey && e.key === 'n' && currentUser?.role === 'student') {
-                e.preventDefault();
-                showDashboardView('new-complaint');
-            }
-            
-            // Dashboard
-            if (e.ctrlKey && e.key === 'd') {
-                e.preventDefault();
-                if (currentUser?.role === 'admin') {
-                    showAdminView('dashboard');
-                } else {
-                    showDashboardView('overview');
-                }
-            }
-            
-            // Quick actions
-            if (e.ctrlKey && e.key === 'k') {
-                e.preventDefault();
-                showQuickActions();
-            }
-            
-            // Focus search
-            if (e.ctrlKey && e.key === 'f') {
-                e.preventDefault();
-                const searchInput = document.querySelector('#search-complaints, #admin-search-complaints');
-                if (searchInput) {
-                    searchInput.focus();
-                    searchInput.select();
-                }
-            }
-            
-            // Close modals/dropdowns
-            if (e.key === 'Escape') {
-                hideLoginModal();
-                document.querySelectorAll('.user-dropdown').forEach(dropdown => {
-                    dropdown.classList.remove('active');
-                });
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.remove();
-                });
-            }
-        });
-    }
-
-    showHelp() {
-        const helpModal = document.createElement('div');
-        helpModal.className = 'modal active';
-        helpModal.innerHTML = `
-            <div class="modal-overlay" onclick="this.parentElement.remove()"></div>
-            <div class="modal-content" style="max-width: 500px;">
-                <div class="modal-header">
-                    <h2>⌨️ Keyboard Shortcuts<fully');ed success loadnhancementsofessional e('🎨 Pronsole.log;
-
-cntericationCeifnter = notficationCe.notiindowuts;
-wortcrdSh= keyboartcuts yboardSho.keindow
-wager;Manger = theme.themeManawindow access
-r globalExport fo// 
-
-0);
-});    }, 200}
-
-                });    : false
-  important              ures.`,
- to all featcess acve haouser.name}! YurrentUack, ${ce bcomele: `Wessag          m',
-      lcome! title: 'We          ,
-     uccess' type: 's            d({
-   r.adenteionCificatot      n      ser) {
-entUcurr (if {
-        () =>eout(etTim    stification
-come nowel Add 
-    //00);
-    }
-    }, 10        Child);
-ns.firsttioBtn, navAcationtificre(nos.insertBefoavAction       n();
-     r.togglecationCenteotifi=> nlick = () ationBtn.oncnotific          +N)';
-   (Ctrlotifications'N = .titletionBtnotifica           n '🔔';
- L =.innerHTMonBtnnotificati            ;
-ion-toggle'catn notifiicon btn- = 'btlassNameionBtn.ctificat  no     n');
-     tot('butreateElemen.cdocumentcationBtn = const notifi       
-     ')) {n-toggleificatio.nottor('ecySelument.queroc !ds &&(navAction    if ns');
-    ctior('.nav-alectouerySeent.qums = docavAction  const n
-      => {ut(() etTimeo
-    so navigatione button tion togglattificd no   // Ad
+// Debug function to check elements
+function debugElements() {
+    console.log('🔍 Debugging elements...');
     
- enter();icationC new NotifnCenter =ificatio
-    notortcuts();eyboardSh = new KShortcutskeyboarder();
-    hemeManagnew TManager = theme
-    estur feafessionallize pro// Initia) {
-    tion( funcentLoaded','DOMConttListener(.addEven
-documentr;
-nteicationCets, notifdShortcur, keyboarthemeManageures
-let atal feonsifesroInitialize p
-}
-
-//  }   }
-   ge();
-     Bads.update    thi);
-        is.render(        th}));
-               
- )stampte(n.timeDa new timestamp:         
-       ...n,           {
-     > (ap(n =(saved).mON.parsetions = JSficais.noti     th  
-     saved) {       if (');
- ficationsnotiaint_'smartcomplgetItem(ocalStorage.saved = l     const s() {
-   ontificatidNoloa
-
+    const elements = [
+        'admin-total-complaints',
+        'admin-pending-complaints', 
+        'admin-progress-complaints',
+        'admin-resolved-complaints',
+        'student-total-complaints',
+        'student-pending-complaints',
+        'student-progress-complaints', 
+        'student-resolved-complaints'
+    ];
     
-    }));icationsifhis.noty(tSON.stringifs', Jtionificalaint_notcompItem('smartetge.scalStora    lo
-    ations() {fic   saveNoti
- ');
-    }
-activet.toggle('lassLiser.contain   this.c   le() {
-  togg     }
-
-
-         }ove();
-  badge.rem            ) {
- if (badge } else      Count;
-  unread' :99+ 99 ? 'nt >adCout = unre.textContenadge       b
-      }              }
-             d(badge);
-hiln.appendC   bellButto             tive';
-    = 'relation le.posistylButton.    bel            ) {
-    on(bellButt        if 
-        ggle');n-toficatioctor('.notit.querySeleen = documButtonnst bell        co
-        ';gefication-bade = 'notiName.class       badg         ;
-('div')eElementnt.creatdocumedge =           ba{
-      ) f (!badge           i > 0) {
- dCount(unrea   if    
-     ;
-     tion-badge')icactor('.notif.querySele documentlet badge =  h;
-      read).lengt => !n.filter(nications.notift = this.eadCount unr      cons
-  ateBadge() {pd
-    u;
-    }
- now'eturn 'Just    r   ago`;
- minutes}m eturn `${> 0) rnutes    if (mi   ago`;
-   urs}hrn `${ho> 0) retuif (hours     o`;
-    {days}d agurn `$) ret (days > 0if        ;
-
-4)or(hours / 2flo= Math.t days      cons
-   );inutes / 60loor(mMath.fs = ourconst h;
-        0) / 6000ffth.floor(dies = Maminutst con
-        timestamp;-  = now  const diff   ate();
-    ew Dow = n nst      con{
-  timestamp) ormatTime(    f
-    }
-
-s.info;] || iconons[typeicturn    re };
-           : '⚙️'
-   system         : '📝',
- aint     compl    '❌',
-    or:       err     
-'⚠️',:     warning,
-        ✅'ss: '       succe',
-      info: 'ℹ️          = {
-  onst icons
-        c(type) {
-    getIcon}
-'');
-    join(    `).iv>
-           </d
-         </div>      ton>
-      e</butovn.id})">Remcatiove(${notifinter.remoCecationnotificlick=" <button on                   '}
- : 'button>`Read</})">Mark ication.idtif(${noAsReadr.markicationCente="notifclick`<button onon.read ? icati!notif      ${         ">
-     ion-actionsnotificativ class=" <d            </div>
-                >
-   mp)}</divn.timestanotificatioime(formatTe">${this.-timnotificationass="cl <div              >
-      sage}</divcation.mesfie">${notin-messagtificatio class="no<div              div>
-      </ation.title}>${notificle"titotification-s="ndiv clas  <             >
-     on-content"ificati"not class=iv   <d           div>
-  </ype)}cation.t(notifion{this.getIc">$nion-icoficat"noticlass=  <div           ">
-    ation.id}ificid="${not data-'}"unread ? '' : 'readtification.-item ${nocationtifi="nossdiv cla      <> `
-      cation =.map(notifitifications = this.nonerHTMLntainer.inCo        list   }
-
-;
-     turn        re
-    `;      v>
-           </di        
-   ons</p>tificati    <p>No no        v>
-        con">🔔</di-iptylass="em     <div c            tate">
-   ="empty-sclass<div        
-         L = `nnerHTMtainer.iistCon     l
-       = 0) {length ==ions.is.notificat  if (th;
-
-      returnontainer) listC    if (!    -list');
-ation('notifictElementById document.gener =tContaiconst lis      nder() {
-  
-    re;
-    }
-e()teBadgis.upda      thender();
-  his.r   t     ;
-ifications().saveNot       thisns = [];
- notificatio this.    () {
-       clearAll
-
- }        }
- 
-  dge();eBais.updatth           ();
- ender     this.r
-       ns();ioificatveNothis.sa        te;
-    ad = trufication.re      noti {
-      otification) (n
-        ifd); in.id ===n => find(tifications.s.nohition = tnotifica   const  {
-     rkAsRead(id)
-    ma
-
-    }ateBadge();this.upd       ;
- render()this.        cations();
-Notifis.savethi      id);
-  n.id !== filter(n => s.tifications = this.noion.notificathis t  d) {
-     remove(i  }
-
-         }
-  30000);
-           }, id);
-    e(s.remov       thi{
-         eout(() => Tim        set    ) {
-on.importantficati!newNoti        if (t
-t importanf nonds i 30 secoove afteruto-rem   // A     dge();
-
-s.updateBa       thirender();
-        this.tions();
- otificasaveN       this.;
- cation)ft(newNotifitions.unshihis.notifica
-        t      };
-| false
-  mportant |tification.it: no importan        
-   e,ad: fals       re    
- Date(),p: new estamim   t         essage,
-.mificationnote:      messag       ,
-tleon.tificatile: noti        tito',
-    pe || 'inf.tyificationnotype:    t   
-       id,       n = {
-    otificatioewN   const n   
-  .now();= Datet id         cons) {
-ionficatoti
-    add(n);
-    }
-s.containerthihild(body.appendCnt.    docume         `;
- 
-  /div>       <>
-       </div         s</p>
-     ication notif  <p>No              
-    n">🔔</div>mpty-icos="elas     <div c              tate">
- pty-s="emdiv class      <       ">
-   on-list"notificatist" id=ion-li="notificatdiv class        <v>
-     </di          utton>
-  All</b>ClearlearAll()".cteronCenotificatik="n" onclictn-smalltn b="bclasson butt     <     3>
-      ications</htif3>🔔 No          <h
-      on-header">"notificatidiv class= <
-           TML = `.innerHainercontis.     th   enter';
-on-cti = 'notificaer.classNamecontainthis.   ;
-     div')('ement.createElocumentr = dcontaineis.    thr() {
-    teContaine
-    crea    }
-
-ons();Notificatis.loadhi        tner();
-ontaieCs.creat  thi) {
-      
-    init();
-    }
-it(.in   thisull;
-      ntainer =.con     this
-   ; []s =tificationno this.     or() {
-   construct  nter {
- cationCes Notifiystem
-clasion Stificatonal Noessi// Prof}
+    elements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            console.log(`✅ Found element: ${id}`, element);
+        } else {
+            console.error(`❌ Missing element: ${id}`);
+        }
+    });
+    
+    console.log('📊 Current data:', {
+        allComplaints: allComplaints.length,
+        complaints: complaints.length,
+        currentUser: currentUser
+    });
 }
 
-odal);
-    helpMpendChild(.apocument.body  d;
-      
-        `iv>     </d        </div>
-            /div>
-              <
-         in('')}).jo     `                
-   /div>         <                bd>
-   }</k', 'Ctrl')trl('ct.replaceortcu<kbd>${sh                          pan>
-      }</sontian>${descrip         <sp               
-        ">tcut-itemshor"v class=         <di             
-      ion]) => `riptt, descortcu(([shaphortcuts).m(this.sect.entries     ${Obj                  ist">
- uts-lshortc"v class=        <di          
-  ">bodyodal-ss="miv cla   <d      v>
-        </di          
-     ton>ut">×</bmove()al').ret('.modcloses="this." onclick-closeass="modalton cl  <but               /h2>
-   
+// Add keyboard shortcut for debugging
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        debugElements();
+    }
+});
