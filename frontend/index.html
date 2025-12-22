@@ -402,9 +402,12 @@
                             <div class="form-section">
                                 <h4>📝 Basic Information</h4>
                                 <div class="form-group">
-                                    <label for="complaint-title">Complaint Title *</label>
+                                    <label for="complaint-title">
+                                        Complaint Title * 
+                                        <span class="help-tooltip" title="Write a clear, brief title that summarizes your complaint">ℹ️</span>
+                                    </label>
                                     <input type="text" id="complaint-title" name="title" required 
-                                           placeholder="Brief description of your issue">
+                                           placeholder="Brief description of your issue" maxlength="100">
                                 </div>
 
                                 <div class="form-row">
@@ -454,7 +457,10 @@
                                     <label for="complaint-description">Describe your complaint in detail *</label>
                                     <textarea id="complaint-description" name="description" required 
                                               placeholder="Please provide detailed information about your complaint including:&#10;• What happened?&#10;• When did it occur?&#10;• Who was involved?&#10;• What outcome are you expecting?"
-                                              rows="6"></textarea>
+                                              rows="6" maxlength="1000"></textarea>
+                                    <div class="character-counter">
+                                        <span id="desc-char-count">0</span>/1000 characters
+                                    </div>
                                 </div>
                             </div>
 
@@ -655,6 +661,15 @@
                             <p>Overview of all complaints and system statistics</p>
                         </div>
                         <div class="view-actions">
+                            <button class="btn btn-secondary" onclick="exportComplaints('csv')" title="Export to CSV">
+                                �  Export CSV
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportComplaints('json')" title="Export to JSON">
+                                📄 Export JSON
+                            </button>
+                            <button class="btn btn-primary" onclick="generateReport()" title="Generate Summary Report">
+                                📈 Report
+                            </button>
                             <button class="btn btn-secondary" onclick="refreshAdminData()" title="Refresh Data">
                                 🔄 Refresh
                             </button>
@@ -1064,13 +1079,6 @@
     <!-- Toast Notifications -->
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- Debug Panel (temporary) -->
-    <div style="position: fixed; top: 10px; left: 10px; z-index: 10000; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px;">
-        <div>API Status: <span id="api-status">Testing...</span></div>
-        <div>Complaints: <span id="complaints-count">0</span></div>
-        <button onclick="testAPIConnection()" style="margin-top: 5px; padding: 5px 10px; cursor: pointer;">Test API</button>
-        <button onclick="forceLogin()" style="margin-top: 5px; padding: 5px 10px; cursor: pointer;">Force Admin Login</button>
-    </div>
 
     <!-- Floating Action Button -->
     <button class="btn-floating" onclick="showQuickActions()" title="Quick Actions">
