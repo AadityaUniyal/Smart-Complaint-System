@@ -1,6 +1,3 @@
-// Smart Complaint System - Complete Frontend JavaScript
-// All functionality implemented
-
 console.log('🎯 Script.js is loading...');
 
 // Global Variables
@@ -1238,6 +1235,18 @@ function loadComplaintForm() {
     
     // Add form validation
     setupComplaintFormValidation();
+    
+    // Setup auto-save draft
+    setupAutoSaveDraft();
+    
+    // Setup priority auto-detection
+    setupPriorityAutoDetection();
+    
+    // Setup character counters
+    setupCharacterCounters();
+    
+    // Load any existing draft
+    setTimeout(loadComplaintDraft, 500);
 }
 
 function setupComplaintFormValidation() {
@@ -1431,6 +1440,11 @@ function validateComplaintForm(form) {
 }
 
 function clearComplaintForm() {
+    // Show confirmation dialog
+    if (!confirm('Are you sure you want to clear the form? Any unsaved changes will be lost.')) {
+        return;
+    }
+    
     const form = document.getElementById('complaint-form');
     if (form) {
         // Reset form
@@ -1447,6 +1461,16 @@ function clearComplaintForm() {
         const categorySelect = document.getElementById('complaint-category');
         if (categorySelect) {
             categorySelect.innerHTML = '<option value="">Select Category</option>';
+        }
+        
+        // Clear saved draft
+        clearComplaintDraft();
+        
+        // Reset character counter
+        const charCount = document.getElementById('desc-char-count');
+        if (charCount) {
+            charCount.textContent = '0';
+            charCount.style.color = '#666';
         }
         
         showToast('Form cleared', 'info');
@@ -1552,7 +1576,7 @@ function filterComplaints() {
                 <div class="complaint-item">
                     <div class="complaint-header">
                         <h4 class="complaint-title">${complaint.title}</h4>
-                        <span class="complaint-status ${complaint.status.toLowerCase().replace(' ', '-')}">${complaint.status}</span>
+                        <span class="complaint-status ${complaint.status.toLowerCase().replace(' ', '-')}">${getStatusIcon(complaint.status)} ${complaint.status}</span>
                     </div>
                     <div class="complaint-meta">
                         <span>Department: ${complaint.department}</span>
@@ -2516,41 +2540,559 @@ function showLogoutConfirmation() {
     `;
     document.body.appendChild(modal);
 }
-// Debug function to check elements
-function debugElements() {
-    console.log('🔍 Debugging elements...');
+
+// Auto-save draft functionality
+function setupAutoSaveDraft() {
+    const form = document.getElementById('complaint-form');
+    if (!form) return;
     
-    const elements = [
-        'admin-total-complaints',
-        'admin-pending-complaints', 
-        'admin-progress-complaints',
-        'admin-resolved-complaints',
-        'student-total-complaints',
-        'student-pending-complaints',
-        'student-progress-complaints', 
-        'student-resolved-complaints'
-    ];
+    const inputs = form.querySelectorAll('input, select, textarea');
+    let saveTimeout;
     
-    elements.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            console.log(`✅ Found element: ${id}`, element);
-        } else {
-            console.error(`❌ Missing element: ${id}`);
-        }
-    });
-    
-    console.log('📊 Current data:', {
-        allComplaints: allComplaints.length,
-        complaints: complaints.length,
-        currentUser: currentUser
+    inputs.forEach(input => {
+        input.addEventListener('input', () => {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveComplaintDraft, 2000); // Save after 2 seconds of inactivity
+        });
     });
 }
 
-// Add keyboard shortcut for debugging
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-        e.preventDefault();
-        debugElements();
+function saveComplaintDraft() {
+    const form = document.getElementById('complaint-form');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const draft = Object.fromEntries(formData.entries());
+    
+    // Only save if there's actual content
+    if (draft.title || draft.description) {
+        localStorage.setItem('complaint_draft', JSON.stringify(draft));
+        showToast('Draft saved automatically', 'info', 2000);
     }
-});
+}
+
+function loadComplaintDraft() {
+    const draft = localStorage.getItem('complaint_draft');
+    if (!draft) return;
+    
+    try {
+        const draftData = JSON.parse(draft);
+        const form = document.getElementById('complaint-form');
+        if (!form) return;
+        
+        // Fill form with draft data
+        Object.keys(draftData).forEach(key => {
+            const field = form.querySelector(`[name="${key}"]`);
+            if (field) {
+                field.value = draftData[key];
+            }
+        });
+        
+        showToast('Draft loaded', 'info', 2000);
+    } catch (error) {
+        console.error('Error loading draft:', error);
+    }
+}
+
+function clearComplaintDraft() {
+    localStorage.removeItem('complaint_draft');
+}
+
+// Clear draft when complaint is successfully submitted
+const originalHandleComplaintSubmission = handleComplaintSubmission;
+handleComplaintSubmission = async function(event) {
+    const result = await originalHandleComplaintSubmission.call(this, event);
+    // Clear draft on successful submission
+    if (result !== false) {
+        clearComplaintDraft();
+    }
+    return result;
+};
+
+// Auto-detect complaint priority based on keywords
+function detectComplaintPriority(title, description) {
+    const text = (title + ' ' + description).toLowerCase();
+    
+    const highPriorityKeywords = [
+        'urgent', 'emergency', 'critical', 'broken', 'not working', 'failed',
+        'security', 'safety', 'harassment', 'discrimination', 'immediate',
+        'asap', 'deadline', 'exam', 'assignment due'
+    ];
+    
+    const mediumPriorityKeywords = [
+        'slow', 'issue', 'problem', 'concern', 'improvement', 'request',
+        'suggestion', 'feedback', 'delay', 'inconvenience'
+    ];
+    
+    // Check for high priority keywords
+    if (highPriorityKeywords.some(keyword => text.includes(keyword))) {
+        return 'High';
+    }
+    
+    // Check for medium priority keywords
+    if (mediumPriorityKeywords.some(keyword => text.includes(keyword))) {
+        return 'Medium';
+    }
+    
+    // Default to low priority
+    return 'Low';
+}
+
+// Auto-suggest priority when user types
+function setupPriorityAutoDetection() {
+    const titleField = document.getElementById('complaint-title');
+    const descField = document.getElementById('complaint-description');
+    const priorityField = document.getElementById('complaint-priority');
+    
+    if (!titleField || !descField || !priorityField) return;
+    
+    function updatePrioritySuggestion() {
+        const title = titleField.value;
+        const description = descField.value;
+        
+        if (title.length > 5 || description.length > 10) {
+            const suggestedPriority = detectComplaintPriority(title, description);
+            
+            // Only suggest if user hasn't manually selected priority
+            if (!priorityField.value || priorityField.value === '') {
+                priorityField.value = suggestedPriority;
+                
+                // Show a subtle notification
+                showToast(`Priority auto-set to ${suggestedPriority} based on content`, 'info', 2000);
+            }
+        }
+    }
+    
+    titleField.addEventListener('blur', updatePrioritySuggestion);
+    descField.addEventListener('blur', updatePrioritySuggestion);
+}
+// Simple keyboard shortcuts for better UX
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + Enter to submit complaint form
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            const activeForm = document.querySelector('#complaint-form:not([style*="display: none"])');
+            if (activeForm) {
+                e.preventDefault();
+                const submitBtn = activeForm.querySelector('button[type="submit"]');
+                if (submitBtn && !submitBtn.disabled) {
+                    submitBtn.click();
+                }
+            }
+        }
+        
+        // Escape to close modals
+        if (e.key === 'Escape') {
+            const activeModal = document.querySelector('.modal.active');
+            if (activeModal) {
+                activeModal.classList.remove('active');
+            }
+        }
+        
+        // Ctrl/Cmd + K to focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const searchInput = document.getElementById('search-complaints');
+            if (searchInput && searchInput.offsetParent !== null) {
+                searchInput.focus();
+            }
+        }
+    });
+}
+
+// Initialize keyboard shortcuts
+setupKeyboardShortcuts();
+// Character counter for text areas
+function setupCharacterCounters() {
+    const descTextarea = document.getElementById('complaint-description');
+    const charCountSpan = document.getElementById('desc-char-count');
+    
+    if (descTextarea && charCountSpan) {
+        function updateCharCount() {
+            const currentLength = descTextarea.value.length;
+            const maxLength = descTextarea.getAttribute('maxlength') || 1000;
+            
+            charCountSpan.textContent = currentLength;
+            
+            // Change color based on usage
+            const percentage = (currentLength / maxLength) * 100;
+            if (percentage > 90) {
+                charCountSpan.style.color = '#e50914'; // Red
+            } else if (percentage > 75) {
+                charCountSpan.style.color = '#ffa500'; // Orange
+            } else {
+                charCountSpan.style.color = '#666'; // Gray
+            }
+        }
+        
+        descTextarea.addEventListener('input', updateCharCount);
+        descTextarea.addEventListener('paste', () => setTimeout(updateCharCount, 10));
+        
+        // Initialize count
+        updateCharCount();
+    }
+}
+// Get status icon for complaints
+function getStatusIcon(status) {
+    const icons = {
+        'Pending': '⏳',
+        'In Progress': '🔄',
+        'Resolved': '✅',
+        'Closed': '🔒',
+        'Rejected': '❌'
+    };
+    return icons[status] || '📝';
+}
+
+// Get priority icon
+function getPriorityIcon(priority) {
+    const icons = {
+        'Low': '🟢',
+        'Medium': '🟡',
+        'High': '🟠',
+        'Critical': '🔴'
+    };
+    return icons[priority] || '⚪';
+}
+// Export functionality
+async function exportComplaints(format) {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast('Only administrators can export data', 'error');
+        return;
+    }
+    
+    try {
+        showToast('Preparing export...', 'info', 2000);
+        
+        const endpoint = format === 'csv' ? '/api/export/complaints/csv' : '/api/export/complaints/json';
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            // Get filename from response headers
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `complaints_export.${format}`;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            // Create blob and download
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showToast(`✅ Export completed: ${filename}`, 'success');
+        } else {
+            throw new Error('Export failed');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        showToast('Export failed. Please try again.', 'error');
+    }
+}
+
+async function generateReport() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast('Only administrators can generate reports', 'error');
+        return;
+    }
+    
+    try {
+        showToast('Generating report...', 'info', 2000);
+        
+        const response = await fetch(`${API_BASE}/reports/summary`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const report = await response.json();
+            showReportModal(report);
+        } else {
+            throw new Error('Report generation failed');
+        }
+    } catch (error) {
+        console.error('Report error:', error);
+        showToast('Report generation failed. Please try again.', 'error');
+    }
+}
+
+function showReportModal(report) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="this.parentElement.remove()"></div>
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>📈 Complaint Summary Report</h2>
+                <button class="modal-close" onclick="this.closest('.modal').remove()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="report-summary">
+                    <h3>📊 Overview</h3>
+                    <p><strong>Total Complaints:</strong> ${report.total}</p>
+                    <p><strong>Generated:</strong> ${new Date(report.generated_at).toLocaleString()}</p>
+                </div>
+                
+                <div class="report-section">
+                    <h4>📋 By Status</h4>
+                    <div class="report-stats">
+                        ${Object.entries(report.by_status).map(([status, count]) => 
+                            `<div class="stat-item">
+                                <span class="stat-label">${getStatusIcon(status)} ${status}:</span>
+                                <span class="stat-value">${count}</span>
+                            </div>`
+                        ).join('')}
+                    </div>
+                </div>
+                
+                <div class="report-section">
+                    <h4>🎯 By Priority</h4>
+                    <div class="report-stats">
+                        ${Object.entries(report.by_priority).map(([priority, count]) => 
+                            `<div class="stat-item">
+                                <span class="stat-label">${getPriorityIcon(priority)} ${priority}:</span>
+                                <span class="stat-value">${count}</span>
+                            </div>`
+                        ).join('')}
+                    </div>
+                </div>
+                
+                <div class="report-section">
+                    <h4>🏢 By Department</h4>
+                    <div class="report-stats">
+                        ${Object.entries(report.by_department).slice(0, 5).map(([dept, count]) => 
+                            `<div class="stat-item">
+                                <span class="stat-label">${dept}:</span>
+                                <span class="stat-value">${count}</span>
+                            </div>`
+                        ).join('')}
+                        ${Object.keys(report.by_department).length > 5 ? 
+                            `<div class="stat-item"><em>...and ${Object.keys(report.by_department).length - 5} more</em></div>` : ''}
+                    </div>
+                </div>
+                
+                <div class="report-actions">
+                    <button class="btn btn-primary" onclick="printReport()">🖨️ Print Report</button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function printReport() {
+    const reportContent = document.querySelector('.modal-content').innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Complaint Summary Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .modal-header { border-bottom: 2px solid #e50914; padding-bottom: 10px; margin-bottom: 20px; }
+                .report-section { margin: 20px 0; }
+                .report-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                .stat-item { display: flex; justify-content: space-between; padding: 5px 0; }
+                .report-actions { display: none; }
+                .modal-close { display: none; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body>
+            ${reportContent}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Send notification function
+async function sendNotification(type, recipient, complaintData, additionalData = {}) {
+    try {
+        const response = await fetch(`${API_BASE}/send-notification`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                type: type,
+                recipient: recipient,
+                complaint_data: complaintData,
+                ...additionalData
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('📧 Notification sent:', result);
+            return true;
+        } else {
+            console.error('Failed to send notification');
+            return false;
+        }
+    } catch (error) {
+        console.error('Notification error:', error);
+        return false;
+    }
+}
+// Quick Actions Menu
+function showQuickActions() {
+    const existingMenu = document.getElementById('quick-actions-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+        return;
+    }
+    
+    const menu = document.createElement('div');
+    menu.id = 'quick-actions-menu';
+    menu.className = 'quick-actions-menu';
+    
+    const actions = [];
+    
+    if (currentUser) {
+        if (currentUser.role === 'admin') {
+            actions.push(
+                { icon: '📊', text: 'Export Data', action: () => exportComplaints('csv') },
+                { icon: '📈', text: 'Generate Report', action: generateReport },
+                { icon: '🔄', text: 'Refresh Data', action: refreshAdminData },
+                { icon: '👥', text: 'View Students', action: () => showDashboardView('students') }
+            );
+        } else {
+            actions.push(
+                { icon: '📝', text: 'New Complaint', action: () => showDashboardView('new-complaint') },
+                { icon: '📋', text: 'My Complaints', action: () => showDashboardView('my-complaints') },
+                { icon: '🔄', text: 'Refresh', action: loadStudentData }
+            );
+        }
+        
+        actions.push(
+            { icon: '🌙', text: 'Toggle Theme', action: toggleTheme },
+            { icon: '🚪', text: 'Logout', action: logout }
+        );
+    } else {
+        actions.push(
+            { icon: '🔑', text: 'Login', action: showLoginModal },
+            { icon: '🌙', text: 'Toggle Theme', action: toggleTheme }
+        );
+    }
+    
+    menu.innerHTML = `
+        <div class="quick-actions-header">
+            <h4>⚡ Quick Actions</h4>
+            <button class="close-btn" onclick="this.closest('.quick-actions-menu').remove()">×</button>
+        </div>
+        <div class="quick-actions-list">
+            ${actions.map(action => `
+                <button class="quick-action-item" onclick="this.closest('.quick-actions-menu').remove(); (${action.action.toString()})()">
+                    <span class="action-icon">${action.icon}</span>
+                    <span class="action-text">${action.text}</span>
+                </button>
+            `).join('')}
+        </div>
+    `;
+    
+    document.body.appendChild(menu);
+    
+    // Close menu when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target) && !e.target.classList.contains('btn-floating')) {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 100);
+}
+
+// Theme toggle function
+function toggleTheme() {
+    const themes = ['dark', 'light', 'ocean', 'forest', 'sunset', 'purple'];
+    const currentIndex = themes.indexOf(currentTheme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    const newTheme = themes[nextIndex];
+    
+    setTheme(newTheme);
+    showToast(`Theme changed to ${newTheme}`, 'info', 2000);
+}
+
+// Enhanced complaint submission with notification
+const originalSubmitComplaint = handleComplaintSubmission;
+async function handleComplaintSubmission(event) {
+    event.preventDefault();
+    
+    // Call original function
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    if (!currentUser || !currentUser.id) {
+        showToast('Please login first to submit a complaint', 'error');
+        return;
+    }
+    
+    data.user_id = currentUser.id;
+    data.student_name = currentUser.name;
+    data.student_email = currentUser.email;
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '⏳ Submitting...';
+    submitBtn.disabled = true;
+    
+    try {
+        const response = await fetch(`${API_BASE}/complaints`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showToast('🎉 Complaint submitted successfully!', 'success');
+            form.reset();
+            clearComplaintDraft();
+            
+            // Send notification
+            const complaintData = {
+                complaint_id: result.complaint_id,
+                title: data.title,
+                student_name: currentUser.name,
+                department: data.department,
+                category: data.category,
+                priority: data.priority,
+                status: 'Pending'
+            };
+            
+            await sendNotification('complaint_submitted', currentUser.email, complaintData);
+            
+            loadStudentData();
+            setTimeout(() => showDashboardView('my-complaints'), 1500);
+        } else {
+            showToast(result.error || 'Failed to submit complaint', 'error');
+        }
+    } catch (error) {
+        console.error('Submission error:', error);
+        showToast('Network error. Please try again.', 'error');
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+}
