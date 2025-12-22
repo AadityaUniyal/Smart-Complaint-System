@@ -481,13 +481,12 @@ class ReportingSystem {
         // Generate HTML content for PDF
         const htmlContent = this.generateHTMLReport(report);
         
-        // Create a temporary window for printing
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
+        // Create a blob with the HTML content
+        const htmlBlob = new Blob([`
             <!DOCTYPE html>
             <html>
             <head>
-                <title>${report.title}</title>
+                <title>${this.escapeHtml(report.title)}</title>
                 <style>
                     body { font-family: Arial, sans-serif; margin: 20px; }
                     .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e50914; padding-bottom: 20px; }
@@ -516,8 +515,16 @@ class ReportingSystem {
                 </script>
             </body>
             </html>
-        `);
-        printWindow.document.close();
+        `], { type: 'text/html' });
+        
+        // Create URL for the blob and open in new window
+        const blobUrl = URL.createObjectURL(htmlBlob);
+        const printWindow = window.open(blobUrl, '_blank');
+        
+        // Clean up the blob URL after a delay
+        setTimeout(() => {
+            URL.revokeObjectURL(blobUrl);
+        }, 5000);
     }
 
     generateHTMLReport(report) {
@@ -774,6 +781,13 @@ class ReportingSystem {
                 important: true
             });
         }
+    }
+
+    // HTML escaping utility to prevent XSS
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 
