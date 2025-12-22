@@ -8,15 +8,8 @@ from security import security_manager, validate_request, rate_limit, security_he
 from performance import perf_monitor, monitor_performance, cached_query
 from error_handler import ErrorHandler, handle_database_errors, validate_json_request
 
-import os
-from datetime import datetime, timedelta
-from dotenv import load_dotenv
-import uuid
-import time
-from sqlalchemy.exc import OperationalError, DisconnectionError
-from functools import wraps
-import csv
-import pandas as pd
+from export_utils import export_complaints_to_csv, export_complaints_to_json, generate_complaint_report, export_students_to_csv
+from email_templates import get_complaint_submitted_template, get_status_update_template, get_admin_notification_template
 
 # Load environment variables from .env file
 load_dotenv()
@@ -1021,3 +1014,182 @@ except ImportError:
 
 if __name__ == '__main__':
     app.run(debug=False, port=5000)
+# Export endpoints
+@app.route('/api/export/complaints/csv', methods=['GET'])
+@login_required
+def export_complaints_csv():
+    """Export all complaints to CSV"""
+    try:
+        # Get all complaints
+        complaints = Complaint.query.all()
+        
+        # Convert to dict format
+        complaints_data = []
+        for complaint in complaints:
+            user = User.query.get(complaint.user_id)
+            department = Department.query.get(complaint.department_id)
+            category = ComplaintCategory.query.get(complaint.category_id)
+            
+            complaints_data.append({
+                'complaint_id': complaint.complaint_id,
+                'student_name': user.name if user else 'Unknown',
+                'student_id': user.student_id if user else 'Unknown',
+                'title': complaint.title,
+                'description': complaint.description,
+                'department': department.name if department else 'Unknown',
+                'category': category.name if category else 'Unknown',
+                'status': complaint.status,
+                'priority': complaint.priority,
+                'urgency_level': complaint.urgency_level,
+                'created_at': complaint.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'updated_at': complaint.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'expected_resolution': complaint.expected_resolution.strftime('%Y-%m-%d') if complaint.expected_resolution else ''
+            })
+        
+        return export_complaints_to_csv(complaints_data)
+        
+    except Exception as e:
+        print(f"Export error: {e}")
+        return jsonify({'error': 'Export failed'}), 500
+
+@app.route('/api/export/complaints/json', methods=['GET'])
+@login_required
+def export_complaints_json():
+    """Export all complaints to JSON"""
+    try:
+        # Get all complaints
+        complaints = Complaint.query.all()
+        
+        # Convert to dict format
+        complaints_data = []
+        for complaint in complaints:
+            user = User.query.get(complaint.user_id)
+            department = Department.query.get(complaint.department_id)
+            category = ComplaintCategory.query.get(complaint.category_id)
+            
+            complaints_data.append({
+                'complaint_id': complaint.complaint_id,
+                'student_name': user.name if user else 'Unknown',
+                'student_id': user.student_id if user else 'Unknown',
+                'title': complaint.title,
+                'description': complaint.description,
+                'department': department.name if department else 'Unknown',
+                'category': category.name if category else 'Unknown',
+                'status': complaint.status,
+                'priority': complaint.priority,
+                'urgency_level': complaint.urgency_level,
+                'created_at': complaint.created_at.isoformat(),
+                'updated_at': complaint.updated_at.isoformat(),
+                'expected_resolution': complaint.expected_resolution.isoformat() if complaint.expected_resolution else None
+            })
+        
+        return export_complaints_to_json(complaints_data)
+        
+    except Exception as e:
+        print(f"Export error: {e}")
+        return jsonify({'error': 'Export failed'}), 500
+
+@app.route('/api/reports/summary', methods=['GET'])
+@login_required
+def get_complaint_summary():
+    """Get complaint summary report"""
+    try:
+        # Get all complaints
+        complaints = Complaint.query.all()
+        
+        # Convert to dict format
+        complaints_data = []
+        for complaint in complaints:
+            user = User.query.get(complaint.user_id)
+            department = Department.query.get(complaint.department_id)
+            category = ComplaintCategory.query.get(complaint.category_id)
+            
+            complaints_data.append({
+                'complaint_id': complaint.complaint_id,
+                'student_name': user.name if user else 'Unknown',
+                'title': complaint.title,
+                'department': department.name if department else 'Unknown',
+                'category': category.name if category else 'Unknown',
+                'status': complaint.status,
+                'priority': complaint.priority,
+                'created_at': complaint.created_at.isoformat()
+            })
+        
+        report = generate_complaint_report(complaints_data)
+        return jsonify(report)
+        
+    except Exception as e:
+        print(f"Report error: {e}")
+        return jsonify({'error': 'Report generation failed'}), 500
+
+@app.route('/api/export/students/csv', methods=['GET'])
+@login_required
+def export_students_csv():
+    """Export all students to CSV"""
+    try:
+        # Get all students
+        students = User.query.filter_by(role='student').all()
+        
+        # Convert to dict format
+        students_data = []
+        for student in students:
+            course = Course.query.get(student.course_id) if student.course_id else None
+            department = Department.query.get(student.department_id) if student.department_id else None
+            
+            students_data.append({
+                'student_id': student.student_id,
+                'name': student.name,
+                'email': student.email,
+                'phone': student.phone,
+                'course_name': course.name if course else student.course_name,
+                'department_name': department.name if department else student.department_name,
+                'year': student.year,
+                'semester': student.semester,
+                'roll_number': student.roll_number,
+                'admission_year': student.admission_year
+            })
+        
+        return export_students_to_csv(students_data)
+        
+    except Exception as e:
+        print(f"Export error: {e}")
+        return jsonify({'error': 'Export failed'}), 500
+
+# Email notification endpoint
+@app.route('/api/send-notification', methods=['POST'])
+@login_required
+def send_notification():
+    """Send email notification (mock implementation)"""
+    try:
+        data = request.get_json()
+        notification_type = data.get('type', 'general')
+        recipient = data.get('recipient')
+        complaint_data = data.get('complaint_data', {})
+        
+        # Mock email sending (in real implementation, use SMTP)
+        if notification_type == 'complaint_submitted':
+            template = get_complaint_submitted_template(complaint_data)
+        elif notification_type == 'status_update':
+            old_status = data.get('old_status')
+            new_status = data.get('new_status')
+            template = get_status_update_template(complaint_data, old_status, new_status)
+        elif notification_type == 'admin_notification':
+            template = get_admin_notification_template(complaint_data)
+        else:
+            return jsonify({'error': 'Invalid notification type'}), 400
+        
+        # Log the email (in real implementation, send via SMTP)
+        print(f"📧 Email would be sent to: {recipient}")
+        print(f"📧 Subject: {template['subject']}")
+        print(f"📧 Type: {notification_type}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notification sent successfully',
+            'recipient': recipient,
+            'subject': template['subject']
+        })
+        
+    except Exception as e:
+        print(f"Notification error: {e}")
+        return jsonify({'error': 'Failed to send notification'}), 500
