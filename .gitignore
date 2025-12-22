@@ -105,6 +105,7 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
 .venv
 env/
 venv/
@@ -138,8 +139,15 @@ dmypy.json
 .env.development
 .env.test
 .env.production
+.env.docker
 backend/.env
 frontend/.env
+
+# Allow example files
+!.env.example
+!.env.*.example
+!backend/.env.example
+!frontend/.env.example
 
 # Database files
 *.db
