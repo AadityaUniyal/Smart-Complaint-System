@@ -3366,3 +3366,463 @@ kbd {
     flex-shrink: 0;
     margin-bottom: var(--spacing-lg);
 }
+/* Character Counter Styles */
+.character-counter {
+    text-align: right;
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px;
+    font-family: 'Inter', sans-serif;
+}
+
+.character-counter span {
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+/* Form improvements */
+.form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.form-group textarea:focus {
+    border-color: #e50914;
+    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.1);
+}
+
+/* Loading button state */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Keyboard shortcut hints */
+.form-actions {
+    position: relative;
+}
+
+.form-actions::after {
+    content: "💡 Tip: Press Ctrl+Enter to submit quickly";
+    position: absolute;
+    bottom: -25px;
+    left: 0;
+    font-size: 0.8em;
+    color: #888;
+    opacity: 0.7;
+}
+
+/* Search input improvements */
+#search-complaints {
+    position: relative;
+}
+
+#search-complaints:focus {
+    border-color: #e50914;
+    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.1);
+}
+
+/* Better toast icons */
+.toast-icon {
+    font-size: 1.2em;
+    margin-right: 8px;
+}
+
+/* Priority auto-detection highlight */
+.priority-auto-detected {
+    background-color: rgba(229, 9, 20, 0.1);
+    border-color: #e50914;
+    transition: all 0.3s ease;
+}
+/* Help Tooltips */
+.help-tooltip {
+    cursor: help;
+    font-size: 0.9em;
+    opacity: 0.7;
+    margin-left: 5px;
+    transition: opacity 0.3s ease;
+}
+
+.help-tooltip:hover {
+    opacity: 1;
+}
+
+/* Better form labels */
+label {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+/* Improved input focus states */
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #e50914;
+    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.1);
+    transform: translateY(-1px);
+    transition: all 0.3s ease;
+}
+
+/* Status icons in complaints list */
+.complaint-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9em;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Smooth animations for form interactions */
+.form-group {
+    transition: all 0.3s ease;
+}
+
+.form-group:focus-within {
+    transform: translateY(-2px);
+}
+
+/* Better button hover effects */
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* Improved complaint cards */
+.complaint-item {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.complaint-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-left-color: #e50914;
+}
+/* Report Modal Styles */
+.report-summary {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #e50914;
+}
+
+.report-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.report-section h4 {
+    color: #e50914;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.report-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.stat-item:hover {
+    background: #e9ecef;
+}
+
+.stat-label {
+    font-weight: 500;
+    color: #333;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: #e50914;
+    background: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    min-width: 30px;
+    text-align: center;
+}
+
+.report-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* Export button improvements */
+.view-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.view-actions .btn {
+    font-size: 0.9em;
+    padding: 8px 12px;
+}
+
+/* Loading states for export */
+.btn-exporting {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-exporting::after {
+    content: '⏳';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Better modal responsiveness */
+@media (max-width: 768px) {
+    .modal-content {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+    
+    .report-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .view-actions {
+        flex-direction: column;
+    }
+    
+    .view-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Print styles for reports */
+@media print {
+    .modal-overlay,
+    .modal-close,
+    .report-actions {
+        display: none !important;
+    }
+    
+    .modal-content {
+        box-shadow: none;
+        border: none;
+        margin: 0;
+        max-width: 100%;
+    }
+    
+    .report-section {
+        break-inside: avoid;
+    }
+}
+/* Quick Actions Menu */
+.quick-actions-menu {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    min-width: 200px;
+    animation: slideUp 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.quick-actions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    background: linear-gradient(135deg, #e50914, #b20710);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.quick-actions-header h4 {
+    margin: 0;
+    font-size: 1em;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.quick-actions-list {
+    padding: 10px;
+}
+
+.quick-action-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    text-align: left;
+    margin-bottom: 2px;
+}
+
+.quick-action-item:hover {
+    background: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.action-icon {
+    font-size: 1.2em;
+    margin-right: 12px;
+    width: 24px;
+    text-align: center;
+}
+
+.action-text {
+    font-weight: 500;
+    color: #333;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Floating Action Button improvements */
+.btn-floating {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e50914, #b20710);
+    color: white;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
+    z-index: 9999;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-floating:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
+}
+
+.btn-floating:active {
+    transform: scale(0.95);
+}
+
+/* Mobile responsiveness for quick actions */
+@media (max-width: 768px) {
+    .quick-actions-menu {
+        right: 10px;
+        left: 10px;
+        bottom: 70px;
+        min-width: auto;
+    }
+    
+    .btn-floating {
+        right: 15px;
+        bottom: 15px;
+        width: 50px;
+        height: 50px;
+        font-size: 1.3em;
+    }
+}
+
+/* Dark theme support for quick actions */
+[data-theme="dark"] .quick-actions-menu {
+    background: #2d2d2d;
+    border-color: #444;
+}
+
+[data-theme="dark"] .quick-action-item {
+    color: #fff;
+}
+
+[data-theme="dark"] .quick-action-item:hover {
+    background: #404040;
+}
+
+[data-theme="dark"] .action-text {
+    color: #fff;
+}
