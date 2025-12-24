@@ -1,6 +1,3 @@
-// Accessibility and Keyboard Navigation Features
-// Professional accessibility compliance and keyboard shortcuts
-
 class AccessibilityManager {
     constructor() {
         this.shortcuts = new Map();
